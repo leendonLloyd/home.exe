@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
+import { COLOR_TYPES, PRESET_TYPES } from '../lib/defaults';
 import Icon, { ICON_KEYS } from './Icon';
 import Sheet from './Sheet';
-import { COLOR_TYPES, PRESET_TYPES } from '../lib/defaults';
 
 const DEFAULT_COLOR_TYPES = ['whites', 'darks'];
 

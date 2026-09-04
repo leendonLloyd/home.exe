@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { DEFAULT_STATE, OWNER_COLORS } from './defaults';
 
 const STORAGE_KEY = 'home.exe:laundry:v1';
@@ -23,8 +23,14 @@ const readState = () => {
 
 export const useLaundryStore = () => {
   const [state, setState] = useState(readState);
+  const hydrated = useRef(false);
 
+  // Skip the first write so a failed read can never overwrite stored data.
   useEffect(() => {
+    if (!hydrated.current) {
+      hydrated.current = true;
+      return;
+    }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 

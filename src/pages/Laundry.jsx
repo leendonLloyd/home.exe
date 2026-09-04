@@ -90,6 +90,9 @@ export default function Laundry() {
           <h1>Laundry</h1>
           <p className="muted">{sessions.length} saved bulks</p>
         </div>
+        <Link to="/laundry/summary" className="btn small">
+          List
+        </Link>
         <button type="button" className="btn primary small" onClick={() => setSheet('save')} disabled={derived.total === 0}>
           Save
         </button>
