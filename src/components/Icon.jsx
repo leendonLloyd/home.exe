@@ -15,6 +15,7 @@ const PATHS = {
   hanger: 'M12 3a2.2 2.2 0 0 1 2.2 2.2c0 2.3-2.2 1.9-2.2 4.3M3 18l9-8 9 8a1.4 1.4 0 0 1-1.3 2H4.3A1.4 1.4 0 0 1 3 18Z',
   basket: 'M3 8h18l-1.6 11.2A2 2 0 0 1 17.4 21H6.6a2 2 0 0 1-2-1.8L3 8Zm4.5 0L10 3m6.5 5L14 3M7 12v5m5-5v5m5-5v5',
   bag: 'M6 8h12l1 13H5L6 8Zm3 0V6a3 3 0 0 1 6 0v2',
+  dumbbell: 'M4 9v6m3-8v10m0-5h10m3-5v10m3-8v6',
 };
 
 export const ICON_KEYS = Object.keys(PATHS);

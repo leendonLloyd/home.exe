@@ -3,6 +3,7 @@ import Icon from '../components/Icon';
 
 const APPS = [
   { to: '/laundry', name: 'Laundry', description: 'Count clothes per bulk before the laundromat run', icon: 'basket' },
+  { to: '/workout', name: 'Workout', description: 'Log sets against the dumbbell plan and read the trend', icon: 'dumbbell' },
 ];
 
 export default function Hub() {
