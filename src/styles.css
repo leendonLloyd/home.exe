@@ -1,14 +1,14 @@
 :root {
-  --bg: #0e1116;
-  --surface: #161b23;
-  --surface-2: #1e242e;
-  --line: #2a3340;
-  --text: #e7ecf3;
-  --muted: #8b97a8;
-  --accent: #7b8cff;
-  --danger: #f2647a;
+  --bg: #f4f6fb;
+  --surface: #ffffff;
+  --surface-2: #eef1f7;
+  --line: #dfe4ee;
+  --text: #1b2331;
+  --muted: #6c7789;
+  --accent: #4d5fe3;
+  --danger: #d93a55;
   --radius: 14px;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -381,7 +381,7 @@ p {
 
 .stepper button:active {
   background: var(--accent);
-  color: #0e1116;
+  color: #ffffff;
 }
 
 .stepper-value {
@@ -412,12 +412,13 @@ p {
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
+  text-decoration: none;
 }
 
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #0e1116;
+  color: #ffffff;
 }
 
 .btn.danger {

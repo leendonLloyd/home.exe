@@ -20,7 +20,7 @@ export default function ItemCard({ item, owner, count, onBump, onOpenActions }) 
         </span>
         <span className="item-text">
           <span className="item-name">{item.name}</span>
-          <span className="pill" style={{ '--pill': owner ? owner.color : '#7a8598' }}>
+          <span className="pill" style={{ '--pill': owner ? owner.color : '#6c7789' }}>
             {owner ? owner.name : 'Unassigned'}
           </span>
         </span>

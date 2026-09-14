@@ -72,7 +72,7 @@ export default function LaundrySummary() {
                       <Icon name={item.icon} size={16} />
                       {item.name}
                     </span>
-                    <span className="pill" style={{ '--pill': item.owner ? item.owner.color : '#7a8598' }}>
+                    <span className="pill" style={{ '--pill': item.owner ? item.owner.color : '#6c7789' }}>
                       {item.owner ? item.owner.name : 'Unassigned'}
                     </span>
                     <strong>{item.count}</strong>

@@ -1,12 +1,12 @@
 export const COLOR_TYPES = [
-  { id: 'whites', label: 'Whites', tint: '#e8edf5' },
-  { id: 'lights', label: 'Lights', tint: '#f4c77e' },
-  { id: 'colors', label: 'Colors', tint: '#6ec1a8' },
-  { id: 'darks', label: 'Darks', tint: '#7b8cff' },
-  { id: 'delicates', label: 'Delicates', tint: '#f08fb6' },
+  { id: 'whites', label: 'Whites', tint: '#8fa3c2' },
+  { id: 'lights', label: 'Lights', tint: '#d99a2b' },
+  { id: 'colors', label: 'Colors', tint: '#2a9d80' },
+  { id: 'darks', label: 'Darks', tint: '#4d5fe3' },
+  { id: 'delicates', label: 'Delicates', tint: '#d55a8c' },
 ];
 
-export const OWNER_COLORS = ['#7b8cff', '#f08fb6', '#6ec1a8', '#f4c77e', '#8fd0f0', '#c89bf5', '#f79b72', '#9ad46a'];
+export const OWNER_COLORS = ['#4d5fe3', '#d55a8c', '#2a9d80', '#c88413', '#2f8fc4', '#8a4fd6', '#d0642c', '#5d9c22'];
 
 export const PRESET_TYPES = [
   { name: 'T-Shirt', icon: 'tshirt' },

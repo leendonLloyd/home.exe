@@ -65,7 +65,7 @@ export default function Laundry() {
         owner: owners
           .filter((owner) => byOwner.get(owner.id))
           .map((owner) => ({ key: owner.id, label: owner.name, value: byOwner.get(owner.id), tint: owner.color })),
-        type: [...byType.entries()].map(([name, value]) => ({ key: name, label: name, value, tint: '#8fd0f0' })),
+        type: [...byType.entries()].map(([name, value]) => ({ key: name, label: name, value, tint: '#2f8fc4' })),
       },
     };
   }, [owners, items, counts]);
