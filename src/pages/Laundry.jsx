@@ -17,13 +17,15 @@ export default function Laundry() {
   const [sheet, setSheet] = useState(null);
   const [editing, setEditing] = useState(null);
   const [collapsed, setCollapsed] = useState({});
+  const [groupBy, setGroupBy] = useState('color');
 
-  const toggleSection = (colorId) => setCollapsed((prev) => ({ ...prev, [colorId]: !prev[colorId] }));
+  const toggleSection = (sectionId) => setCollapsed((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }));
 
   const countOf = (itemId) => counts[itemId] ?? 0;
 
   const derived = useMemo(() => {
     const ownerById = Object.fromEntries(owners.map((owner) => [owner.id, owner]));
+    const colorById = Object.fromEntries(COLOR_TYPES.map((color) => [color.id, color]));
     const lines = items
       .filter((item) => (counts[item.id] ?? 0) > 0)
       .map((item) => ({
@@ -52,6 +54,7 @@ export default function Laundry() {
 
     return {
       ownerById,
+      colorById,
       lines,
       total,
       pieces: { types: new Set(items.map((item) => item.name)).size, owners: owners.length },
@@ -70,10 +73,20 @@ export default function Laundry() {
     };
   }, [owners, items, counts]);
 
-  const sections = COLOR_TYPES.map((color) => ({
-    ...color,
-    entries: items.filter((item) => item.colorType === color.id),
-  })).filter((section) => section.entries.length > 0);
+  const pillFor = (item) => {
+    if (groupBy === 'owner') {
+      const color = derived.colorById[item.colorType];
+      return color ? { label: color.label, color: color.tint } : null;
+    }
+    const owner = derived.ownerById[item.ownerId];
+    return owner ? { label: owner.name, color: owner.color } : null;
+  };
+
+  const sections = (
+    groupBy === 'owner'
+      ? owners.map((owner) => ({ id: owner.id, label: owner.name, tint: owner.color, entries: items.filter((item) => item.ownerId === owner.id) }))
+      : COLOR_TYPES.map((color) => ({ ...color, entries: items.filter((item) => item.colorType === color.id) }))
+  ).filter((section) => section.entries.length > 0);
 
   const openItemSheet = (item) => {
     setEditing(item);
@@ -101,6 +114,27 @@ export default function Laundry() {
       <main className="scroll">
         <KpiStrip total={derived.total} pieces={derived.pieces} breakdowns={derived.breakdowns} />
 
+        <div className="segmented" role="tablist" aria-label="Group by">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={groupBy === 'color'}
+            className={groupBy === 'color' ? 'seg active' : 'seg'}
+            onClick={() => setGroupBy('color')}
+          >
+            By color
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={groupBy === 'owner'}
+            className={groupBy === 'owner' ? 'seg active' : 'seg'}
+            onClick={() => setGroupBy('owner')}
+          >
+            By owner
+          </button>
+        </div>
+
         {sections.map((section) => (
           <section className="group" key={section.id} style={{ '--tint': section.tint }}>
             <button
@@ -122,7 +156,7 @@ export default function Laundry() {
                   <ItemCard
                     key={item.id}
                     item={item}
-                    owner={derived.ownerById[item.ownerId]}
+                    pill={pillFor(item)}
                     count={countOf(item.id)}
                     onBump={(delta) => store.bumpCount(item.id, delta)}
                     onOpenActions={() => {

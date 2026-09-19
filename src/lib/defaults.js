@@ -23,14 +23,36 @@ export const PRESET_TYPES = [
   { name: 'Duvet Cover', icon: 'duvet' },
 ];
 
+export const DEFAULT_OWNERS = [
+  { id: 'own-shi', name: 'Shi', color: OWNER_COLORS[1] },
+  { id: 'own-don', name: 'Don', color: OWNER_COLORS[0] },
+  { id: 'own-na', name: 'N/A', color: '#6c7789' },
+];
+
+// Household linens default to the N/A owner instead of a person.
+const HOUSEHOLD_PRESET_NAMES = ['Bedsheet', 'Pillowcase', 'Duvet Cover'];
+
+// Seed every preset in both lights and darks per owner so the grid starts populated.
+const DEFAULT_ITEM_COLOR_TYPES = ['lights', 'darks'];
+
+const PERSON_OWNERS = DEFAULT_OWNERS.filter((owner) => owner.id !== 'own-na');
+
+const DEFAULT_ITEMS = PRESET_TYPES.flatMap((preset, index) => {
+  const ownerId = HOUSEHOLD_PRESET_NAMES.includes(preset.name)
+    ? 'own-na'
+    : PERSON_OWNERS[index % PERSON_OWNERS.length].id;
+  return DEFAULT_ITEM_COLOR_TYPES.map((colorType) => ({
+    id: `itm-${preset.name}-${colorType}`.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    name: preset.name,
+    icon: preset.icon,
+    ownerId,
+    colorType,
+  }));
+});
+
 export const DEFAULT_STATE = {
-  owners: [{ id: 'own-me', name: 'Me', color: OWNER_COLORS[0] }],
-  items: [
-    { id: 'itm-1', name: 'T-Shirt', icon: 'tshirt', ownerId: 'own-me', colorType: 'whites' },
-    { id: 'itm-2', name: 'T-Shirt', icon: 'tshirt', ownerId: 'own-me', colorType: 'darks' },
-    { id: 'itm-3', name: 'Pants', icon: 'pants', ownerId: 'own-me', colorType: 'darks' },
-    { id: 'itm-4', name: 'Towel', icon: 'towel', ownerId: 'own-me', colorType: 'colors' },
-  ],
+  owners: DEFAULT_OWNERS,
+  items: DEFAULT_ITEMS,
   counts: {},
   sessions: [],
 };

@@ -1,6 +1,6 @@
 import Icon from './Icon';
 
-export default function ItemCard({ item, owner, count, onBump, onOpenActions }) {
+export default function ItemCard({ item, pill, count, onBump, onOpenActions }) {
   return (
     <article
       className={count > 0 ? 'item active' : 'item'}
@@ -20,8 +20,8 @@ export default function ItemCard({ item, owner, count, onBump, onOpenActions }) 
         </span>
         <span className="item-text">
           <span className="item-name">{item.name}</span>
-          <span className="pill" style={{ '--pill': owner ? owner.color : '#6c7789' }}>
-            {owner ? owner.name : 'Unassigned'}
+          <span className="pill" style={{ '--pill': pill?.color ?? '#6c7789' }}>
+            {pill?.label ?? 'Unassigned'}
           </span>
         </span>
       </div>
