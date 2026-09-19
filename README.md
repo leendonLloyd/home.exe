@@ -9,6 +9,7 @@ Mobile-first hub for small home utilities. React + Vite, deployed to GitHub Page
 | `/` | Hub | Entry point listing the mini apps |
 | `/laundry` | Laundry tracker | Count clothes per bulk before a laundromat run |
 | `/workout` | Workout tracker | Log sets against the dumbbell plan, with the training log history |
+| `/bills` | Bill tracker | Track recurring bills and see what's due or overdue |
 
 Routing uses `HashRouter`, so the deployed URL is `https://leendonlloyd.github.io/home.exe/#/laundry`. This avoids needing server-side rewrites on GitHub Pages.
 
@@ -24,6 +25,14 @@ Progression is read off the total reps across sets (`Σ`), not a one-rep max, so
 Sessions 1–9 of the suit block are transcribed into `src/lib/workoutHistory.js` and stay authoritative in code; sessions you log layer on top of them, numbered from 10. Editing the seed file therefore updates existing history without an import step.
 
 **Finish · save session** writes one history entry per exercise that has sets logged, then clears the day.
+
+## Bill tracker
+
+Add a bill with an amount, an icon, and a cadence (monthly, quarterly, or yearly) plus the day it's due. No amounts ship seeded — unlike laundry's clothing presets, a wrong number for rent is worse than an empty list, so `/bills` starts blank.
+
+On load, the page computes each bill's current cycle and flags anything overdue or due within 5 days in a banner at the top — that's the whole "reminder": no push notifications, no scheduled job, just date math against whatever's open when the page loads. The cadence and due-date logic lives in `src/lib/billing.js`, independent of storage, so it's covered by its own sanity checks rather than only exercised through the UI.
+
+Marking a bill paid records a payment for that bill's specific cycle (`billId + period`, e.g. `bill-rent__2026-09`) rather than pushing onto a list — logging the same period twice overwrites instead of duplicating. **History** in the header opens the full payment log, with Export/Import JSON in its footer.
 
 ## Run
 
@@ -49,7 +58,9 @@ History → **Export JSON** downloads that document; **Import JSON** restores it
 
 The workout tracker keeps its own document under `home.exe:workout:v1`, holding only the selected plan, the sets in progress, and the sessions you have logged — the plan and the seeded history live in code. Export and Import sit in the tab bar on `/workout/log`.
 
-If you later want real persistence across devices, swap `src/lib/store.js` (or `src/lib/workoutStore.js`) for a hosted key-value backend (Supabase, Firebase, or a Gist-backed API) — the rest of the app only talks to the hook.
+The bill tracker keeps its own document under `home.exe:bills:v1`: the bills you've added and every payment record, keyed by `billId + period` rather than a random id. That key shape is deliberate — it's the same document address a Firestore collection would use (`payments/{billId}__{period}`), so "mark paid" is already a targeted upsert rather than a whole-document rewrite.
+
+If you later want real persistence across devices, swap `src/lib/store.js` (or `src/lib/workoutStore.js` / `src/lib/billsStore.js`) for a hosted key-value backend — the rest of the app only talks to the hook. This matters more once two people share a browser-per-device: `localStorage` is per-device, so laundry and bills counts don't sync between phones. Firestore is the planned target — its free tier covers this comfortably, and the store hooks above are already shaped for targeted writes (bump a count, mark a period paid) rather than whole-blob rewrites, which is what makes that swap safe instead of a rewrite.
 
 ## Deploy
 

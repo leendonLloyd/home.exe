@@ -1,4 +1,5 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import Bills from './pages/Bills';
 import Hub from './pages/Hub';
 import Laundry from './pages/Laundry';
 import LaundrySummary from './pages/LaundrySummary';
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/" element={<Hub />} />
         <Route path="/laundry" element={<Laundry />} />
         <Route path="/laundry/summary" element={<LaundrySummary />} />
+        <Route path="/bills" element={<Bills />} />
         <Route path="/workout" element={<Workout />} />
         <Route path="/workout/log" element={<WorkoutLog />} />
         <Route path="/workout/notes" element={<WorkoutNotes />} />

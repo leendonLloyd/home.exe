@@ -16,6 +16,14 @@ const PATHS = {
   basket: 'M3 8h18l-1.6 11.2A2 2 0 0 1 17.4 21H6.6a2 2 0 0 1-2-1.8L3 8Zm4.5 0L10 3m6.5 5L14 3M7 12v5m5-5v5m5-5v5',
   bag: 'M6 8h12l1 13H5L6 8Zm3 0V6a3 3 0 0 1 6 0v2',
   dumbbell: 'M4 9v6m3-8v10m0-5h10m3-5v10m3-8v6',
+  home: 'M4 11 12 4l8 7M6 10v10h5v-6h2v6h5V10',
+  bolt: 'M13 3 4 14h6l-1 7 9-11h-6l1-7Z',
+  droplet: 'M12 3s7 7.5 7 12a7 7 0 1 1-14 0c0-4.5 7-12 7-12Z',
+  wifi: 'M4 9a12 12 0 0 1 16 0M7 12.5a8 8 0 0 1 10 0M10 16a4 4 0 0 1 4 0M12 19.5v.01',
+  phone: 'M7 3h10a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm3 15h4',
+  card: 'M2 6h20a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Zm-1 5h22M5 15h4',
+  shield: 'M12 3 5 6v6c0 5 3.5 8 7 9 3.5-1 7-4 7-9V6l-7-3Z',
+  receipt: 'M6 2h12v20l-2-1.5L14 22l-2-1.5L10 22l-2-1.5L6 22V2Zm3 6h6m-6 4h6m-6 4h4',
 };
 
 export const ICON_KEYS = Object.keys(PATHS);
