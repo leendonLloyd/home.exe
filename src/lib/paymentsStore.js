@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { summarise } from './paymentTotals';
 import { fetchPayments, readUrl } from './todoApi';
 
 const CACHE_KEY = 'home.exe:payments:cache:v1';
@@ -63,16 +64,7 @@ export const usePaymentsStore = () => {
     });
   }, []);
 
-  const totals = useMemo(() => {
-    const counted = data.rows.filter((row) => !excluded.includes(row.vendor));
-    return {
-      package: counted.reduce((sum, row) => sum + (row.total || 0), 0),
-      paid: counted.reduce((sum, row) => sum + (row.paid || 0), 0),
-      balance: counted.reduce((sum, row) => sum + (row.balance || 0), 0),
-      counted: counted.length,
-      excluded: data.rows.length - counted.length,
-    };
-  }, [data.rows, excluded]);
+  const totals = useMemo(() => summarise(data.rows, excluded), [data.rows, excluded]);
 
   return { url, data, loading, error, refresh, excluded, toggleExcluded, totals, dismissError: () => setError(null) };
 };

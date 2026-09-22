@@ -18,12 +18,13 @@ export default function Payments() {
 
   const rows = useMemo(() => {
     const settled = (row) => row.balance === 0 && row.total != null;
-    const visible = store.data.rows.filter((row) =>
+    // store.totals.vendors already has the sheet's own total rows removed.
+    const visible = store.totals.vendors.filter((row) =>
       filter === 'all' ? true : filter === 'settled' ? settled(row) : !settled(row)
     );
     // Biggest outstanding first — that is the question this page answers.
     return [...visible].sort((a, b) => (b.balance || 0) - (a.balance || 0));
-  }, [store.data.rows, filter]);
+  }, [store.totals.vendors, filter]);
 
   if (!store.url) {
     return (
@@ -58,7 +59,7 @@ export default function Payments() {
         </Link>
         <div>
           <h1>Payments</h1>
-          <p className="muted">{store.loading ? 'Syncing…' : `${store.data.rows.length} vendors · read-only`}</p>
+          <p className="muted">{store.loading ? 'Syncing…' : `${store.totals.vendors.length} vendors · read-only`}</p>
         </div>
         <button type="button" className="icon-btn" onClick={store.refresh} disabled={store.loading} aria-label="Reload">
           ↻
@@ -77,20 +78,27 @@ export default function Payments() {
 
         <div className="kpi-total">
           <div>
-            <span className="kpi-total-value">{money(store.totals.balance)}</span>
+            <span className="kpi-total-value">{money(store.totals.headline.balance)}</span>
             <span className="kpi-total-label">still to pay</span>
           </div>
           <div className="kpi-total-meta">
-            <span>paid {money(store.totals.paid)}</span>
-            <span>of {money(store.totals.package)}</span>
+            <span>paid {money(store.totals.headline.paid)}</span>
+            <span>of {money(store.totals.headline.package)}</span>
           </div>
         </div>
 
-        <p className="muted small">
-          Totals cover {store.totals.counted} row{store.totals.counted === 1 ? '' : 's'}
-          {store.totals.excluded > 0 ? `, ${store.totals.excluded} excluded` : ''}. Tap a vendor to leave roll-up or
-          superseded rows out.
-        </p>
+        {store.totals.headline.source ? (
+          <p className="muted small">
+            Straight from the sheet&apos;s own <strong>{store.totals.headline.source}</strong> row, rather than summed
+            here — the tab mixes vendor lines with roll-ups, so adding them up would count some twice.
+          </p>
+        ) : (
+          <p className="muted small">
+            Summed from {store.totals.counted} row{store.totals.counted === 1 ? '' : 's'}
+            {store.totals.excluded > 0 ? `, ${store.totals.excluded} excluded` : ''}. The sheet has no total row to read
+            instead, so tap a vendor to leave roll-up or superseded rows out.
+          </p>
+        )}
 
         <div className="segmented" role="tablist" aria-label="Filter payments">
           {FILTERS.map((entry) => (
