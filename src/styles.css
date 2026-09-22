@@ -1124,3 +1124,35 @@ table.log .sum {
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* ---------- laundry check-in ---------- */
+
+.item.check {
+  cursor: default;
+}
+
+.item.done {
+  border-color: color-mix(in srgb, var(--good) 45%, var(--line));
+  background: color-mix(in srgb, var(--good) 8%, var(--surface));
+}
+
+.item.short {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+}
+
+.stepper-value small {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.session-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}

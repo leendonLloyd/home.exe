@@ -1,8 +1,19 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { checkProgress } from '../lib/laundryCheck';
 import Sheet from './Sheet';
 
+// Selecting a bulk opens its check-in page, which lists the same breakdown the
+// row used to expand into — plus the counting-back-in flow.
+function statusOf(session) {
+  const progress = checkProgress(session);
+  if (progress.closed && progress.complete) return { label: 'All back', color: 'var(--good)' };
+  if (progress.closed) return { label: `${progress.missing} short`, color: 'var(--danger)' };
+  if (progress.started) return { label: `${progress.back}/${progress.sent} back`, color: 'var(--warm)' };
+  return null;
+}
+
 export default function HistorySheet({ open, sessions, onClose, onDelete, onExport, onImport }) {
-  const [openId, setOpenId] = useState(null);
   const fileRef = useRef(null);
 
   return (
@@ -33,34 +44,33 @@ export default function HistorySheet({ open, sessions, onClose, onDelete, onExpo
       }
     >
       <ul className="stack-list">
-        {sessions.map((session) => (
-          <li key={session.id} className="session">
-            <button type="button" className="session-head" onClick={() => setOpenId(openId === session.id ? null : session.id)}>
-              <span>
-                <strong>{session.date}</strong>
-                {session.note ? <span className="muted"> · {session.note}</span> : null}
-              </span>
-              <span className="badge">{session.total}</span>
-            </button>
-            {openId === session.id ? (
-              <>
-                <ul className="stack-list compact">
-                  {session.lines.map((line) => (
-                    <li key={line.itemId}>
-                      <span>
-                        {line.name} · <span className="muted">{line.ownerName}</span>
-                      </span>
-                      <strong>{line.count}</strong>
-                    </li>
-                  ))}
-                </ul>
-                <button type="button" className="btn danger block" onClick={() => onDelete(session.id)}>
-                  Delete bulk
-                </button>
-              </>
-            ) : null}
-          </li>
-        ))}
+        {sessions.map((session) => {
+          const status = statusOf(session);
+          return (
+            <li key={session.id}>
+              <Link to={`/laundry/check/${session.id}`} className="session-link">
+                <span className="summary-label">
+                  <strong>{session.date}</strong>
+                  {session.note ? <span className="muted"> · {session.note}</span> : null}
+                </span>
+                {status ? (
+                  <span className="pill" style={{ '--pill': status.color }}>
+                    {status.label}
+                  </span>
+                ) : null}
+                <span className="badge">{session.total}</span>
+              </Link>
+              <button
+                type="button"
+                className="micro-btn danger"
+                onClick={() => onDelete(session.id)}
+                aria-label={`Delete bulk from ${session.date}`}
+              >
+                🗑
+              </button>
+            </li>
+          );
+        })}
         {sessions.length === 0 ? <li className="muted">No saved bulks yet</li> : null}
       </ul>
     </Sheet>

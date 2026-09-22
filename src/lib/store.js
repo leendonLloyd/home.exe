@@ -116,6 +116,44 @@ export const useLaundryStore = () => {
     });
   }, []);
 
+  // Check-in writes only touch one session's `returned` map, so they stay a
+  // targeted update rather than a rewrite of the whole history array.
+  const patchSession = (sessions, sessionId, patch) =>
+    sessions.map((session) => (session.id === sessionId ? { ...session, ...patch(session) } : session));
+
+  const bumpReturn = useCallback((sessionId, itemId, delta) => {
+    setState((prev) => ({
+      ...prev,
+      sessions: patchSession(prev.sessions, sessionId, (session) => {
+        const line = session.lines.find((entry) => entry.itemId === itemId);
+        if (!line) return {};
+        const next = Math.min(line.count, Math.max(0, (session.returned?.[itemId] ?? 0) + delta));
+        return { returned: { ...session.returned, [itemId]: next } };
+      }),
+    }));
+  }, []);
+
+  const resetReturns = useCallback((sessionId) => {
+    setState((prev) => ({
+      ...prev,
+      sessions: patchSession(prev.sessions, sessionId, () => ({ returned: {}, closedAt: null })),
+    }));
+  }, []);
+
+  const closeCheck = useCallback((sessionId) => {
+    setState((prev) => ({
+      ...prev,
+      sessions: patchSession(prev.sessions, sessionId, () => ({ closedAt: new Date().toISOString() })),
+    }));
+  }, []);
+
+  const reopenCheck = useCallback((sessionId) => {
+    setState((prev) => ({
+      ...prev,
+      sessions: patchSession(prev.sessions, sessionId, () => ({ closedAt: null })),
+    }));
+  }, []);
+
   const deleteSession = useCallback((sessionId) => {
     setState((prev) => ({ ...prev, sessions: prev.sessions.filter((session) => session.id !== sessionId) }));
   }, []);
@@ -150,6 +188,10 @@ export const useLaundryStore = () => {
     resetCounts,
     saveSession,
     deleteSession,
+    bumpReturn,
+    resetReturns,
+    closeCheck,
+    reopenCheck,
     exportState,
     importState,
   };

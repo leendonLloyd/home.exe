@@ -8,10 +8,19 @@ Mobile-first hub for small home utilities. React + Vite, deployed to GitHub Page
 | --- | --- | --- |
 | `/` | Hub | Entry point listing the mini apps |
 | `/laundry` | Laundry tracker | Count clothes per bulk before a laundromat run |
+| `/laundry/check/:id` | Check-in | Count a saved bulk back in and see what's missing |
 | `/workout` | Workout tracker | Log sets against the dumbbell plan, with the training log history |
 | `/bills` | Bill tracker | Track recurring bills and see what's due or overdue |
 
 Routing uses `HashRouter`, so the deployed URL is `https://leendonlloyd.github.io/home.exe/#/laundry`. This avoids needing server-side rewrites on GitHub Pages.
+
+## Laundry check-in
+
+Selecting a bulk in **History** opens its check-in page. It reuses the counter's layout — same grouped sections, same colour/owner toggle, same cards — but the number runs the other way: it starts at what you sent and you tap **−** as each piece turns up, so a card reading `0 of 5` is fully accounted for and the header count is what's still missing.
+
+Finishing with pieces outstanding asks first, then records the shortfall against the bulk rather than quietly closing it. History rows show the state at a glance: `3/10 back` while counting, `All back` when clean, `2 short` when closed with pieces missing.
+
+The check state lives on the session (`returned` per line, plus `closedAt`), so it survives leaving the page, and bulks saved before this existed simply start at zero.
 
 ## Workout tracker
 
