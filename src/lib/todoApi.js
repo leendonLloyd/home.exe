@@ -83,6 +83,18 @@ export async function fetchTasks(url) {
   }
 }
 
+// Payment monitoring is served by the same deployment, behind ?view=payments.
+export async function fetchPayments(url) {
+  try {
+    const joiner = url.includes('?') ? '&' : '?';
+    const payload = await parse(await fetch(`${url}${joiner}view=payments`, { method: 'GET', redirect: 'follow' }));
+    if (!payload.ok) throw new Error(payload.error || 'The script reported a failure.');
+    return payload;
+  } catch (error) {
+    throw failed(error);
+  }
+}
+
 export async function sendAction(url, body) {
   try {
     const payload = await parse(

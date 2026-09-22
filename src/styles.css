@@ -1253,3 +1253,58 @@ table.log .sum {
   padding-top: 10px;
   border-top: 1px solid var(--line);
 }
+
+/* ---------- payment monitoring ---------- */
+
+.pay-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 11px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.pay-row.settled {
+  opacity: 0.7;
+}
+
+.pay-row.excluded {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.pay-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pay-vendor {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.pay-text .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pay-amount {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pay-amount strong {
+  font-size: 15px;
+}

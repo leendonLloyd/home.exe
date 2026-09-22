@@ -12,6 +12,7 @@ Mobile-first hub for small home utilities. React + Vite, deployed to GitHub Page
 | `/workout` | Workout tracker | Log sets against the dumbbell plan, with the training log history |
 | `/bills` | Bill tracker | Track recurring bills and see what's due or overdue |
 | `/todo` | To Do | Read and edit the wedding planner's TO DO LIST tab, live |
+| `/payments` | Payments | Vendor balances from the PAYMENT MONITORING tab, read-only |
 
 Routing uses `HashRouter`, so the deployed URL is `https://leendonlloyd.github.io/home.exe/#/laundry`. This avoids needing server-side rewrites on GitHub Pages.
 
@@ -66,6 +67,21 @@ Two things worth knowing:
 - **Writes can be refused on purpose.** Row numbers shift if someone edits the
   sheet directly while the app is open, so every write names the item it expects in
   that row and backs out on a mismatch rather than overwriting the wrong task.
+
+## Payments (read-only)
+
+Reads the **PAYMENT MONITORING** tab through the same Apps Script deployment as
+To Do — connect it once under To Do and this works too. It never writes: the
+`FINAL PAYMENT` column is a formula and the figures are real money.
+
+Payment stages are discovered as whatever columns sit between `TOTAL PACKAGE`
+and `FINAL PAYMENT`, so adding a `6TH PAYMENT` to the sheet needs no code
+change. Vendors sort by balance, biggest first.
+
+**Totals need a decision from you.** The sheet mixes line items with roll-up
+rows (`Soiree Events Place (Total Cost)`) and superseded quotes (`Juan Carlo
+(Caterer) v1` alongside `v2`), so summing every row double-counts. Tap a vendor
+and **Exclude from totals** to leave it out; the choice is stored per device.
 
 ## Run
 
