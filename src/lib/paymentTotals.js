@@ -29,9 +29,27 @@ export function paidOf(row) {
 /** Sum of the instalment columns actually filled in, which can be less than paidOf. */
 export const instalmentsOf = (row) => round2((row.stages || []).reduce((sum, s) => sum + (s.amount || 0), 0));
 
+/**
+ * The grand total row is the end of the vendor table. Below it the tab carries
+ * other sections — bridesmaid gifts, prenup extras, loose transport notes —
+ * that are neither vendors nor covered by the total, so they stop here.
+ */
 export function splitRows(rows) {
-  const totals = rows.filter((row) => isTotalRow(row.vendor));
-  return { vendors: rows.filter((row) => !isTotalRow(row.vendor)), totals };
+  const grandAt = rows.findIndex((row) => GRAND_ROW.test(String(row.vendor || '').trim()));
+
+  if (grandAt === -1) {
+    return {
+      vendors: rows.filter((row) => !isTotalRow(row.vendor)),
+      totals: rows.filter((row) => isTotalRow(row.vendor)),
+      ignored: [],
+    };
+  }
+
+  return {
+    vendors: rows.slice(0, grandAt).filter((row) => !isTotalRow(row.vendor)),
+    totals: [rows[grandAt]],
+    ignored: rows.slice(grandAt + 1),
+  };
 }
 
 /** The most authoritative total row, or null when the sheet has none. */
@@ -45,7 +63,7 @@ export function sheetTotal(totals) {
 }
 
 export function summarise(rows, excluded) {
-  const { vendors, totals } = splitRows(rows);
+  const { vendors, totals, ignored } = splitRows(rows);
   const counted = vendors.filter((row) => !excluded.includes(row.vendor));
   const computed = {
     package: round2(counted.reduce((sum, row) => sum + (row.total || 0), 0)),
@@ -57,6 +75,7 @@ export function summarise(rows, excluded) {
   return {
     vendors,
     totals,
+    ignored,
     counted: counted.length,
     excluded: vendors.length - counted.length,
     computed,
@@ -94,9 +113,8 @@ export function dueLabel(days) {
  * first, then soonest. Rows the sheet totals for you are never included.
  */
 export function dueSoon(rows, today = new Date(), within = DUE_SOON_DAYS) {
-  return rows
-    .filter((row) => !isTotalRow(row.vendor))
-    .filter((row) => (row.balance || 0) > 0 && row.due)
+  return splitRows(rows)
+    .vendors.filter((row) => (row.balance || 0) > 0 && row.due)
     .map((row) => ({ row, days: daysUntil(row.due, today) }))
     .filter((entry) => entry.days != null && entry.days <= within)
     .sort((a, b) => a.days - b.days);

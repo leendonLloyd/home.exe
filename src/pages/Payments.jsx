@@ -99,6 +99,9 @@ export default function Payments() {
           <p className="muted small">
             Straight from the sheet&apos;s own <strong>{store.totals.headline.source}</strong> row, rather than summed
             here — the tab mixes vendor lines with roll-ups, so adding them up would count some twice.
+            {store.totals.ignored.length > 0
+              ? ` The ${store.totals.ignored.length} rows below that row are other sections, and are left out.`
+              : ''}
           </p>
         ) : (
           <p className="muted small">

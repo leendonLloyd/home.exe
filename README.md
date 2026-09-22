@@ -78,12 +78,19 @@ Payment stages are discovered as whatever columns sit between `TOTAL PACKAGE`
 and `FINAL PAYMENT`, so adding a `6TH PAYMENT` to the sheet needs no code
 change. Vendors sort by balance, biggest first.
 
+**The vendor table ends at the grand total.** Rows below `TOTAL AMOUNT` are
+other sections — bridesmaid gifts, flower girls, prenup extras, loose transport
+notes — none of which are vendors or covered by that total, so the app stops
+reading there and says how many rows it left out. Without a grand total row
+nothing is cut.
+
 **Due dates need a column in the sheet.** `PAYMENT MONITORING` has no date
 column, so the "due within 7 days" banner stays hidden until you add one.
 Any of `DUE DATE`, `DUE`, `PAYMENT DUE`, `NEXT DUE`, `DUE ON` or `SCHEDULE`
 works, anywhere in the row — the header is found by name, not position. The
 banner then lists who is owed and how much, and opens to the instalment history
-behind each figure. Rows the sheet totals for you never appear in it.
+behind each figure. Each vendor row also carries its own due date, counting down
+to it and turning red once past. Totals and below-the-line rows never appear.
 
 **Marking a vendor paid** writes the amount into the first empty instalment
 column — the ones `FINAL PAYMENT` subtracts from — so the sheet recalculates
