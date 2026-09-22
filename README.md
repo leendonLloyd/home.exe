@@ -78,10 +78,14 @@ Payment stages are discovered as whatever columns sit between `TOTAL PACKAGE`
 and `FINAL PAYMENT`, so adding a `6TH PAYMENT` to the sheet needs no code
 change. Vendors sort by balance, biggest first.
 
-**Totals need a decision from you.** The sheet mixes line items with roll-up
-rows (`Soiree Events Place (Total Cost)`) and superseded quotes (`Juan Carlo
-(Caterer) v1` alongside `v2`), so summing every row double-counts. Tap a vendor
-and **Exclude from totals** to leave it out; the choice is stored per device.
+**The headline is read, not computed.** The tab mixes vendor lines, roll-ups
+(`Soiree Events Place (Total Cost)`) and the sheet's own totals (`TOTAL
+AMOUNT`), so adding every row up counts some twice — against the live sheet
+that gave 1,282,920 outstanding where the sheet itself says 618,960. A row
+whose name starts with `TOTAL` / `GRAND TOTAL` is treated as the sheet's answer
+and used directly, and those rows are kept out of the vendor list below. Only
+when no such row exists does the app sum the vendors, and there you can tap one
+and **Exclude from totals** to drop roll-ups or superseded quotes.
 
 ## Run
 
