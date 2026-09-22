@@ -10,6 +10,12 @@
  * column or inserting rows above the table won't break the app.
  */
 
+// Leave blank when this script lives inside the sheet (Extensions > Apps
+// Script). Set it to the id from the sheet URL when the script is a standalone
+// project, because a standalone script has no "active" spreadsheet to find:
+//   docs.google.com/spreadsheets/d/THIS_PART_HERE/edit
+const SPREADSHEET_ID = '';
+
 const SHEET_NAME = 'TO DO LIST';
 
 // Header labels as they read in the sheet, mapped to the keys the app uses.
@@ -58,9 +64,25 @@ function json_(payload) {
   return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON);
 }
 
+function book_() {
+  if (SPREADSHEET_ID) return SpreadsheetApp.openById(SPREADSHEET_ID);
+
+  const active = SpreadsheetApp.getActive();
+  if (active) return active;
+
+  throw new Error(
+    'This script is not attached to a spreadsheet, so there is no active one to read. ' +
+    'Either recreate it from the sheet via Extensions > Apps Script, or set SPREADSHEET_ID ' +
+    'at the top of this file to the id in the sheet URL, then redeploy a new version.'
+  );
+}
+
 function layout_() {
-  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEET_NAME);
-  if (!sheet) throw new Error('No tab named "' + SHEET_NAME + '"');
+  const sheet = book_().getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    const names = book_().getSheets().map(function (s) { return s.getName(); }).join(', ');
+    throw new Error('No tab named "' + SHEET_NAME + '". Tabs found: ' + names);
+  }
 
   const width = Math.max(sheet.getLastColumn(), 1);
   const scanDepth = Math.min(40, sheet.getLastRow() || 1);

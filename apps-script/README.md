@@ -8,6 +8,13 @@ planner sheet.
 1. Open the sheet → **Extensions → Apps Script**.
 2. Replace `Code.gs` with the contents of [`TodoList.gs`](TodoList.gs). If the
    tab isn't named exactly `TO DO LIST`, change `SHEET_NAME` at the top.
+
+   **If you made a standalone script** rather than opening it from the sheet,
+   `SpreadsheetApp.getActive()` has nothing to return and every call fails with
+   *"not attached to a spreadsheet"*. Set `SPREADSHEET_ID` at the top of the file
+   to the id in your sheet's URL — the part between `/d/` and `/edit` — and it
+   will work the same way. That constant is intentionally left blank in this
+   repo so a private sheet id isn't published with the site.
 3. **Deploy → New deployment → Web app**
    - Execute as: **Me**
    - Who has access: **Anyone**
