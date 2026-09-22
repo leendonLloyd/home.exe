@@ -78,6 +78,15 @@ Payment stages are discovered as whatever columns sit between `TOTAL PACKAGE`
 and `FINAL PAYMENT`, so adding a `6TH PAYMENT` to the sheet needs no code
 change. Vendors sort by balance, biggest first.
 
+**Nothing about money is added up here.** `TOTAL PACKAGE` and `FINAL PAYMENT`
+come straight from the sheet, and paid is `package − balance` — the inverse of
+the sheet's own `FINAL PAYMENT` formula, so it always agrees with it. Summing
+the instalment columns does not: three rows are settled on the
+`Soiree Events Place (Total Cost)` roll-up and never had their own columns
+filled in, so adding them up called a settled line part-paid. The instalments
+are still listed on a vendor's detail, with a note where they fall short of
+what the sheet says was paid.
+
 **The headline is read, not computed.** The tab mixes vendor lines, roll-ups
 (`Soiree Events Place (Total Cost)`) and the sheet's own totals (`TOTAL
 AMOUNT`), so adding every row up counts some twice — against the live sheet

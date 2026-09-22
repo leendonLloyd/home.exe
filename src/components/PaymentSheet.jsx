@@ -1,10 +1,16 @@
 import { money } from '../lib/money';
+import { instalmentsOf, paidOf } from '../lib/paymentTotals';
 import Sheet from './Sheet';
 
 export default function PaymentSheet({ open, row, excluded, onClose, onToggleExcluded }) {
   if (!row) return null;
 
   const stages = row.stages.filter((stage) => stage.amount);
+  const paid = paidOf(row);
+  const instalments = instalmentsOf(row);
+  // Payments recorded against a roll-up leave the component line's instalment
+  // columns empty even though the sheet shows it settled.
+  const unrecorded = paid != null && Math.abs(paid - instalments) > 0.005;
 
   return (
     <Sheet open={open} title={row.vendor} onClose={onClose}>
@@ -21,7 +27,7 @@ export default function PaymentSheet({ open, row, excluded, onClose, onToggleExc
         ))}
         <li>
           <span>Paid so far</span>
-          <strong>{money(row.paid)}</strong>
+          <strong>{money(paid)}</strong>
         </li>
         <li>
           <span>Balance</span>
@@ -29,7 +35,13 @@ export default function PaymentSheet({ open, row, excluded, onClose, onToggleExc
         </li>
       </ul>
 
-      {stages.length === 0 ? <p className="muted small">No instalments recorded yet.</p> : null}
+      {stages.length === 0 ? <p className="muted small">No instalments recorded here.</p> : null}
+      {unrecorded ? (
+        <p className="muted small">
+          The instalments above come to {money(instalments)}, but the sheet puts the balance at {money(row.balance)} —
+          the rest was recorded on a roll-up row. Paid and balance follow the sheet.
+        </p>
+      ) : null}
       {row.notes ? <p className="muted small">Note: {row.notes}</p> : null}
       {row.pax ? <p className="muted small">Pax: {row.pax}</p> : null}
       <p className="muted small">Row {row.row} of the sheet. This view never writes.</p>
