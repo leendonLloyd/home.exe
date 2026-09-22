@@ -1,27 +1,9 @@
 /**
- * home.exe — TO DO LIST bridge.
+ * TO DO LIST tab — read and write.
  *
- * Paste into Extensions > Apps Script on the wedding planner sheet, then
- * Deploy > New deployment > Web app, "Execute as: Me", "Who has access:
- * Anyone". The "Anyone" part matters: "Anyone with a Google account" makes
- * the browser fetch fail on auth, not on permissions.
- *
- * The layout is discovered at runtime rather than hardcoded, so moving a
- * column or inserting rows above the table won't break the app.
+ * Layout is discovered at runtime, so moving a column or inserting rows above
+ * the table is safe. Renaming a header is not: update FIELDS if you do.
  */
-
-// Only needed when this script is a standalone project rather than one created
-// from the sheet, because a standalone script has no "active" spreadsheet.
-//
-// Prefer Project Settings > Script properties > SPREADSHEET_ID, which keeps the
-// id out of the code entirely. Filling the constant in also works, but this
-// file is committed to a public repo, so an id left here gets published.
-// Bump when changing this file. Every response echoes it, so you can tell at a
-// glance whether the deployment is serving the code you just pasted — editing
-// the script does nothing until you deploy a NEW VERSION of the web app.
-const BUILD = '2026-09-22-payments';
-
-const SPREADSHEET_ID = '';
 
 const SHEET_NAME = 'TO DO LIST';
 
@@ -42,75 +24,8 @@ const READ_ONLY = ['daysLeft'];
 
 const SUMMARY_LABELS = ['Total Tasks', 'Completed Tasks', 'Pending Tasks', 'Overdue Tasks'];
 
-// Payment monitoring is read-only: the balance column is a formula and the
-// numbers are the source of truth for real money, so nothing here writes.
-const PAYMENTS_SHEET = 'PAYMENT MONITORING';
-const PAYMENTS_HEADER = 'VENDORS';
-const PAYMENTS_TOTAL = 'TOTAL PACKAGE';
-const PAYMENTS_BALANCE = 'FINAL PAYMENT';
-
-function doGet(e) {
-  try {
-    const view = (e && e.parameter && e.parameter.view) || 'todo';
-    if (view === 'ping') return json_({ ok: true, build: BUILD, tabs: book_().getSheets().map((s) => s.getName()) });
-    if (view === 'payments') return json_({ ok: true, ...readPayments_() });
-    return json_({ ok: true, ...readAll_() });
-  } catch (err) {
-    return json_({ ok: false, build: BUILD, error: String(err && err.message ? err.message : err) });
-  }
-}
-
-function doPost(e) {
-  try {
-    const body = JSON.parse(e.postData.contents);
-    const result =
-      body.action === 'update' ? update_(body) :
-      body.action === 'add' ? add_(body) :
-      body.action === 'remove' ? remove_(body) :
-      { ok: false, error: 'Unknown action: ' + body.action };
-
-    // Every mutation answers with fresh state, so the app never has to guess
-    // what the sheet looks like afterwards.
-    return json_(result.ok ? { ...result, ...readAll_() } : result);
-  } catch (err) {
-    return json_({ ok: false, error: String(err && err.message ? err.message : err) });
-  }
-}
-
-function json_(payload) {
-  const withBuild = payload.build ? payload : { ...payload, build: BUILD };
-  return ContentService.createTextOutput(JSON.stringify(withBuild)).setMimeType(ContentService.MimeType.JSON);
-}
-
-function configuredId_() {
-  if (SPREADSHEET_ID) return SPREADSHEET_ID;
-  try {
-    return PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID') || '';
-  } catch (err) {
-    return '';
-  }
-}
-
-function book_() {
-  const id = configuredId_();
-  if (id) return SpreadsheetApp.openById(id);
-
-  const active = SpreadsheetApp.getActive();
-  if (active) return active;
-
-  throw new Error(
-    'This script is not attached to a spreadsheet, so there is no active one to read. ' +
-    'Add the sheet id under Project Settings > Script properties as SPREADSHEET_ID ' +
-    '(or set the constant at the top of this file), then redeploy a new version.'
-  );
-}
-
 function layout_() {
-  const sheet = book_().getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    const names = book_().getSheets().map(function (s) { return s.getName(); }).join(', ');
-    throw new Error('No tab named "' + SHEET_NAME + '". Tabs found: ' + names);
-  }
+  const sheet = tab_(SHEET_NAME);
 
   const width = Math.max(sheet.getLastColumn(), 1);
   const scanDepth = Math.min(40, sheet.getLastRow() || 1);
@@ -203,11 +118,6 @@ function priorityOptions_(sheet, cols, firstDataRow, lastRow) {
   }
 
   return found;
-}
-
-function isoDate_(value) {
-  if (!(value instanceof Date) || isNaN(value.getTime())) return '';
-  return Utilities.formatDate(value, Session.getScriptTimeZone(), 'yyyy-MM-dd');
 }
 
 function readAll_() {
@@ -347,96 +257,4 @@ function remove_(body) {
   sheet.deleteRow(row);
   SpreadsheetApp.flush();
   return { ok: true };
-}
-
-
-/* ---------- payment monitoring (read-only) ---------- */
-
-function num_(value) {
-  return typeof value === 'number' && !isNaN(value) ? value : null;
-}
-
-/**
- * The payment stages are whatever columns sit between TOTAL PACKAGE and FINAL
- * PAYMENT, rather than a fixed list of "1ST PAYMENT".."5TH PAYMENT" — adding a
- * 6th instalment in the sheet then needs no change here.
- */
-function readPayments_() {
-  const book = book_();
-  const sheet = book.getSheetByName(PAYMENTS_SHEET);
-  if (!sheet) {
-    const names = book.getSheets().map(function (s) { return s.getName(); }).join(', ');
-    throw new Error('No tab named "' + PAYMENTS_SHEET + '". Tabs found: ' + names);
-  }
-
-  const width = Math.max(sheet.getLastColumn(), 1);
-  const lastRow = sheet.getLastRow();
-  const scan = sheet.getRange(1, 1, Math.min(20, lastRow || 1), width).getDisplayValues();
-  const norm = (v) => String(v == null ? '' : v).trim().toUpperCase();
-
-  let headerRow = 0;
-  for (let r = 0; r < scan.length; r += 1) {
-    if (scan[r].some((v) => norm(v) === PAYMENTS_HEADER)) {
-      headerRow = r + 1;
-      break;
-    }
-  }
-  if (!headerRow) throw new Error('Could not find a header row containing "' + PAYMENTS_HEADER + '"');
-
-  const header = scan[headerRow - 1].map(norm);
-  const labels = scan[headerRow - 1].map((v) => String(v == null ? '' : v).trim());
-
-  const vendorCol = header.indexOf(PAYMENTS_HEADER) + 1;
-  const totalCol = header.indexOf(PAYMENTS_TOTAL) + 1;
-  const balanceCol = header.indexOf(PAYMENTS_BALANCE) + 1;
-  const notesCol = header.indexOf('NOTES') + 1;
-  const paxCol = header.indexOf('# OF PAX') + 1;
-
-  const stages = [];
-  if (totalCol && balanceCol) {
-    for (let c = totalCol + 1; c < balanceCol; c += 1) {
-      if (labels[c - 1]) stages.push({ col: c, label: labels[c - 1] });
-    }
-  }
-
-  const firstDataRow = headerRow + 1;
-  const rows = [];
-
-  if (lastRow >= firstDataRow) {
-    const height = lastRow - firstDataRow + 1;
-    const raw = sheet.getRange(firstDataRow, 1, height, width).getValues();
-    const shown = sheet.getRange(firstDataRow, 1, height, width).getDisplayValues();
-
-    for (let i = 0; i < height; i += 1) {
-      const vendor = String(raw[i][vendorCol - 1] || '').trim();
-      if (!vendor) continue;
-
-      const paidStages = stages.map((stage) => ({
-        label: stage.label,
-        amount: num_(raw[i][stage.col - 1]),
-        text: String(shown[i][stage.col - 1] || '').trim(),
-      }));
-
-      rows.push({
-        row: firstDataRow + i,
-        vendor: vendor,
-        total: totalCol ? num_(raw[i][totalCol - 1]) : null,
-        totalText: totalCol ? String(shown[i][totalCol - 1] || '').trim() : '',
-        balance: balanceCol ? num_(raw[i][balanceCol - 1]) : null,
-        balanceText: balanceCol ? String(shown[i][balanceCol - 1] || '').trim() : '',
-        paid: paidStages.reduce((sum, s) => sum + (s.amount || 0), 0),
-        stages: paidStages,
-        notes: notesCol ? String(shown[i][notesCol - 1] || '').trim() : '',
-        pax: paxCol ? String(shown[i][paxCol - 1] || '').trim() : '',
-      });
-    }
-  }
-
-  return {
-    tab: PAYMENTS_SHEET,
-    headerRow: headerRow,
-    stageLabels: stages.map((s) => s.label),
-    rows: rows,
-    fetchedAt: new Date().toISOString(),
-  };
 }
