@@ -8,10 +8,23 @@
 
 function doGet(e) {
   try {
-    const view = (e && e.parameter && e.parameter.view) || 'todo';
+    const params = (e && e.parameter) || {};
+
+    // Entourage and RSVP came from a separate project and keep their original
+    // query shape, because the live RSVP form already points at this URL.
+    const guests = guestsRoute_(params);
+    if (guests) return guests;
+
+    const view = params.view || 'todo';
 
     if (view === 'ping') {
-      return json_({ ok: true, build: BUILD, views: VIEWS_, tabs: book_().getSheets().map((s) => s.getName()) });
+      return json_({
+        ok: true,
+        build: BUILD,
+        views: VIEWS_,
+        endpoints: ENDPOINTS_,
+        tabs: book_().getSheets().map((s) => s.getName()),
+      });
     }
     if (view === 'todo') return json_({ ok: true, ...readAll_() });
     if (view === 'payments') return json_({ ok: true, ...readPayments_() });
@@ -23,6 +36,9 @@ function doGet(e) {
 }
 
 const VIEWS_ = ['ping', 'todo', 'payments'];
+
+// Endpoints that predate ?view= and keep their own query shape.
+const ENDPOINTS_ = ['?list=entourage', '?rsvp=lookup&name=', '?rsvp=submit&m=&mobile='];
 
 function doPost(e) {
   try {

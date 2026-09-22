@@ -11,6 +11,7 @@ project, one deployment, one URL — several features, one file each.
 | `Main.gs` | The project's only `doGet` / `doPost`, routing to everything else |
 | `Todo.gs` | `TO DO LIST` tab — read and write |
 | `Payments.gs` | `PAYMENT MONITORING` tab — read only |
+| `Guests.gs` | `GUEST LIST` tab — entourage listing and RSVP |
 
 Paste each as a separate file in the Apps Script editor (**+ → Script**, name it
 without the `.gs`). Order in the editor doesn't matter.
@@ -32,6 +33,28 @@ with three rules:
    initialise in file order, so a top-level read can run before the other file
    loads. Inside a function is always safe — functions only run once a request
    arrives.
+
+## Entourage and RSVP
+
+`Guests.gs` was a standalone project before. Its query shapes are unchanged,
+because the live RSVP form and entourage page already call them:
+
+| Request | Does |
+| --- | --- |
+| `?list=entourage` | Everyone with a role, with `side` derived from relationship |
+| `?rsvp=lookup&name=` | Finds the invitation block(s) a name belongs to |
+| `?rsvp=submit&m=&mobile=&head=&message=` | Writes responses and logs to `RSVP_Log` |
+
+Those replies keep their original `{status, message}` shape rather than the
+`{ok, error}` the rest of this project uses, so nothing calling them needs
+changing. The one behaviour that did change: a bare call with no parameters
+used to return the text `OK` and now returns the to-do list, because home.exe
+reads it that way. Nothing was calling it without parameters.
+
+`SHEET_ID` is gone — it used `SpreadsheetApp.openById` with the id hardcoded.
+It now goes through the shared `book_()`, so **set `SPREADSHEET_ID` under
+Project Settings → Script properties before deploying**, or every endpoint
+including the live RSVP will fail.
 
 ## Adding a feature
 
