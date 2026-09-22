@@ -16,6 +16,11 @@
 // Prefer Project Settings > Script properties > SPREADSHEET_ID, which keeps the
 // id out of the code entirely. Filling the constant in also works, but this
 // file is committed to a public repo, so an id left here gets published.
+// Bump when changing this file. Every response echoes it, so you can tell at a
+// glance whether the deployment is serving the code you just pasted — editing
+// the script does nothing until you deploy a NEW VERSION of the web app.
+const BUILD = '2026-09-22-payments';
+
 const SPREADSHEET_ID = '';
 
 const SHEET_NAME = 'TO DO LIST';
@@ -47,10 +52,11 @@ const PAYMENTS_BALANCE = 'FINAL PAYMENT';
 function doGet(e) {
   try {
     const view = (e && e.parameter && e.parameter.view) || 'todo';
+    if (view === 'ping') return json_({ ok: true, build: BUILD, tabs: book_().getSheets().map((s) => s.getName()) });
     if (view === 'payments') return json_({ ok: true, ...readPayments_() });
     return json_({ ok: true, ...readAll_() });
   } catch (err) {
-    return json_({ ok: false, error: String(err && err.message ? err.message : err) });
+    return json_({ ok: false, build: BUILD, error: String(err && err.message ? err.message : err) });
   }
 }
 
@@ -72,7 +78,8 @@ function doPost(e) {
 }
 
 function json_(payload) {
-  return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON);
+  const withBuild = payload.build ? payload : { ...payload, build: BUILD };
+  return ContentService.createTextOutput(JSON.stringify(withBuild)).setMimeType(ContentService.MimeType.JSON);
 }
 
 function configuredId_() {

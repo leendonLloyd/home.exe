@@ -32,8 +32,27 @@ planner sheet.
 > second one makes the browser request fail on Google's sign-in redirect, which
 > surfaces as an opaque CORS error rather than a helpful message.
 
-After changing the script you must **Deploy → Manage deployments → edit → new
-version**, or the web app keeps serving the old code.
+## Redeploying after a change — the part that catches everyone
+
+Editing the code changes nothing on its own. The web app serves a **pinned
+version**, so you must publish a new one:
+
+**Deploy → Manage deployments → ✏️ (pencil) → Version → `New version` → Deploy**
+
+Use that, not *New deployment* — *New deployment* mints a **different URL**,
+leaving the old one serving the old code, and every device then has to be
+re-pasted.
+
+To check which code is actually live, open your `/exec` URL with `?view=ping`:
+
+```json
+{"ok":true,"build":"2026-09-22-payments","tabs":["WEDDING DETAILS","PAYMENT MONITORING","TO DO LIST", ...]}
+```
+
+Every response carries `build`. If it doesn't match the `BUILD` constant at the
+top of `TodoList.gs`, the deployment is stale — you edited the code but didn't
+publish a new version, or you're pointing at a different deployment. `?view=ping`
+also lists the tab names it can see, which settles any "no tab named …" error.
 
 ## What it writes
 
