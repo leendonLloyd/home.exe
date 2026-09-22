@@ -13,9 +13,11 @@ const emptyDraft = (category) => ({
 
 export default function TaskSheet({ open, task, categories, priorityOptions, presetCategory, busy, onClose, onSave, onDelete }) {
   const [draft, setDraft] = useState(() => emptyDraft(presetCategory));
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useEffect(() => {
     if (!open) return;
+    setConfirmingDelete(false);
     if (task) {
       const { category, name } = splitItem(task.item);
       setDraft({ category, name, person: task.person, due: task.due, priority: task.priority, notes: task.notes });
@@ -124,9 +126,36 @@ export default function TaskSheet({ open, task, categories, priorityOptions, pre
       <input id="task-notes" value={draft.notes} onChange={(event) => patch({ notes: event.target.value })} placeholder="Optional" />
 
       {task ? (
-        <button type="button" className="btn danger block" disabled={busy} onClick={() => { onDelete(task); onClose(); }}>
-          Delete from sheet
-        </button>
+        <div className="danger-zone">
+          {confirmingDelete ? (
+            <>
+              <p className="muted small">
+                Delete <strong>{task.item}</strong> from row {task.row}? This removes the row from the sheet and cannot be
+                undone here.
+              </p>
+              <div className="row-form">
+                <button type="button" className="btn block" onClick={() => setConfirmingDelete(false)}>
+                  Keep it
+                </button>
+                <button
+                  type="button"
+                  className="btn danger block"
+                  disabled={busy}
+                  onClick={() => {
+                    onDelete(task);
+                    onClose();
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </>
+          ) : (
+            <button type="button" className="btn danger block" disabled={busy} onClick={() => setConfirmingDelete(true)}>
+              Delete from sheet
+            </button>
+          )}
+        </div>
       ) : null}
     </Sheet>
   );
