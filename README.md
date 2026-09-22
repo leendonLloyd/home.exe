@@ -11,6 +11,7 @@ Mobile-first hub for small home utilities. React + Vite, deployed to GitHub Page
 | `/laundry/check/:id` | Check-in | Count a saved bulk back in and see what's missing |
 | `/workout` | Workout tracker | Log sets against the dumbbell plan, with the training log history |
 | `/bills` | Bill tracker | Track recurring bills and see what's due or overdue |
+| `/todo` | To Do | Read and edit the wedding planner's TO DO LIST tab, live |
 
 Routing uses `HashRouter`, so the deployed URL is `https://leendonlloyd.github.io/home.exe/#/laundry`. This avoids needing server-side rewrites on GitHub Pages.
 
@@ -42,6 +43,29 @@ Add a bill with an amount, an icon, and a cadence (monthly, quarterly, or yearly
 On load, the page computes each bill's current cycle and flags anything overdue or due within 5 days in a banner at the top — that's the whole "reminder": no push notifications, no scheduled job, just date math against whatever's open when the page loads. The cadence and due-date logic lives in `src/lib/billing.js`, independent of storage, so it's covered by its own sanity checks rather than only exercised through the UI.
 
 Marking a bill paid records a payment for that bill's specific cycle (`billId + period`, e.g. `bill-rent__2026-09`) rather than pushing onto a list — logging the same period twice overwrites instead of duplicating. **History** in the header opens the full payment log, with Export/Import JSON in its footer.
+
+## To Do (Google Sheet backed)
+
+The only app here that isn't `localStorage` — it reads and writes the **TO DO LIST**
+tab of the wedding planner sheet through an Apps Script web app you deploy
+yourself. Setup is in [`apps-script/README.md`](apps-script/README.md).
+
+Tasks in that sheet are named by convention — `Entourage: CORD`, `Fam: Mama Gigi
+Shoes` — so the app splits on the first colon and uses the prefix as a collapsible
+section, showing just the task name inside it. Writing back re-joins the two, so
+the sheet's own naming is preserved.
+
+It writes `ITEM`, `PERSON IN CHARGE`, `DUE DATE`, `PRIORITY`, `DONE` and `NOTES`
+only. `DAYS LEFT` and the four summary tiles are formulas: read, never written.
+
+Two things worth knowing:
+
+- **The `/exec` URL is the only credential.** It lives in `localStorage` per device
+  and is deliberately not committed, so the published site doesn't leak it. Anyone
+  holding it can read and edit the sheet.
+- **Writes can be refused on purpose.** Row numbers shift if someone edits the
+  sheet directly while the app is open, so every write names the item it expects in
+  that row and backs out on a mismatch rather than overwriting the wrong task.
 
 ## Run
 

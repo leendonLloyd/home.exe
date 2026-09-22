@@ -2,6 +2,7 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Bills from './pages/Bills';
 import Hub from './pages/Hub';
 import Laundry from './pages/Laundry';
+import Todo from './pages/Todo';
 import LaundryCheck from './pages/LaundryCheck';
 import LaundrySummary from './pages/LaundrySummary';
 import Workout from './pages/Workout';
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/laundry/summary" element={<LaundrySummary />} />
         <Route path="/laundry/check/:sessionId" element={<LaundryCheck />} />
         <Route path="/bills" element={<Bills />} />
+        <Route path="/todo" element={<Todo />} />
         <Route path="/workout" element={<Workout />} />
         <Route path="/workout/log" element={<WorkoutLog />} />
         <Route path="/workout/notes" element={<WorkoutNotes />} />

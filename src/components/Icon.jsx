@@ -24,6 +24,7 @@ const PATHS = {
   card: 'M2 6h20a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Zm-1 5h22M5 15h4',
   shield: 'M12 3 5 6v6c0 5 3.5 8 7 9 3.5-1 7-4 7-9V6l-7-3Z',
   receipt: 'M6 2h12v20l-2-1.5L14 22l-2-1.5L10 22l-2-1.5L6 22V2Zm3 6h6m-6 4h6m-6 4h4',
+  checklist: 'M4 6.5 5.5 8 8 5M4 13.5 5.5 15 8 12M4 20.5 5.5 22 8 19M11 6.5h9M11 13.5h9M11 20.5h9',
 };
 
 export const ICON_KEYS = Object.keys(PATHS);

@@ -5,6 +5,7 @@ const APPS = [
   { to: '/laundry', name: 'Laundry', description: 'Count clothes per bulk before the laundromat run', icon: 'basket' },
   { to: '/workout', name: 'Workout', description: 'Log sets against the dumbbell plan and read the trend', icon: 'dumbbell' },
   { to: '/bills', name: 'Bills', description: 'Track recurring bills and see what is due', icon: 'receipt' },
+  { to: '/todo', name: 'To Do', description: 'Read and edit the wedding planner to-do sheet', icon: 'checklist' },
 ];
 
 export default function Hub() {
