@@ -39,9 +39,13 @@ version**, so you must publish a new one:
 
 **Deploy → Manage deployments → ✏️ (pencil) → Version → `New version` → Deploy**
 
-Use that, not *New deployment* — *New deployment* mints a **different URL**,
-leaving the old one serving the old code, and every device then has to be
-re-pasted.
+Use that in preference to *New deployment*, which mints a **different URL** and
+means re-pasting on every device.
+
+If Edit → New version doesn't take — the build stamp below still shows the old
+value after deploying — just do **Deploy → New deployment** instead. It always
+publishes current code; you only pay for it by having to reconnect each device
+with the new URL.
 
 To check which code is actually live, open your `/exec` URL with `?view=ping`:
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { looksLikeExecUrl } from '../lib/todoApi';
 import Sheet from './Sheet';
 
-export default function TodoSetupSheet({ open, current, onClose, onConnect, onDisconnect }) {
+export default function TodoSetupSheet({ open, current, build, onClose, onConnect, onDisconnect }) {
   const [url, setUrl] = useState('');
 
   useEffect(() => {
@@ -48,6 +48,13 @@ export default function TodoSetupSheet({ open, current, onClose, onConnect, onDi
         spellCheck={false}
       />
       {odd ? <p className="muted small warm">That doesn&apos;t look like an /exec URL. Saving it anyway is fine if you know better.</p> : null}
+
+      {current ? (
+        <p className="muted small">
+          Connected deployment reports build <strong>{build || '(none — predates build stamping, so it is out of date)'}</strong>.
+          If that isn&apos;t the build in <code>apps-script/TodoList.gs</code>, the deployment is serving older code.
+        </p>
+      ) : null}
 
       <p className="muted small">
         The URL stays on this device only — it is never committed with the site. Anyone holding it can read and edit the

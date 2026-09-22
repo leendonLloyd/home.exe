@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchTasks, readCache, readUrl, sendAction, writeCache, writeUrl } from './todoApi';
 
-const EMPTY = { tasks: [], summary: {}, priorityOptions: [], fetchedAt: null };
+const EMPTY = { tasks: [], summary: {}, priorityOptions: [], fetchedAt: null, build: null };
 
 export const useTodoStore = () => {
   const [url, setUrl] = useState(readUrl);
@@ -17,6 +17,7 @@ export const useTodoStore = () => {
       summary: payload.summary ?? {},
       priorityOptions: payload.priorityOptions ?? [],
       fetchedAt: payload.fetchedAt ?? new Date().toISOString(),
+      build: payload.build ?? null,
     };
     setData(next);
     writeCache(next);

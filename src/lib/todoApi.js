@@ -89,6 +89,15 @@ export async function fetchPayments(url) {
     const joiner = url.includes('?') ? '&' : '?';
     const payload = await parse(await fetch(`${url}${joiner}view=payments`, { method: 'GET', redirect: 'follow' }));
     if (!payload.ok) throw new Error(payload.error || 'The script reported a failure.');
+
+    // A deployment published before the payments view ignores ?view entirely
+    // and answers with the to-do list. Without this the page just sits empty,
+    // which looks like a bug in the page rather than a stale deployment.
+    if (!payload.rows && payload.tasks) {
+      throw new Error(
+        'This deployment predates the payments view — it answered with the to-do list. Redeploy the Apps Script as a new version, then reconnect under To Do → Sheet.'
+      );
+    }
     return payload;
   } catch (error) {
     throw failed(error);

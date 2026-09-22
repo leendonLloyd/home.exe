@@ -16,7 +16,7 @@ const SUMMARY_ORDER = ['Total Tasks', 'Completed Tasks', 'Pending Tasks', 'Overd
 
 export default function Todo() {
   const store = useTodoStore();
-  const { tasks, summary, priorityOptions } = store.data;
+  const { tasks, summary, priorityOptions, build } = store.data;
 
   const [filter, setFilter] = useState('open');
   // Tracks what's open rather than what's closed, so groups that arrive with
@@ -69,6 +69,7 @@ export default function Todo() {
         <TodoSetupSheet
           open={sheet === 'setup'}
           current={store.url}
+          build={build}
           onClose={() => setSheet(null)}
           onConnect={store.connect}
           onDisconnect={store.disconnect}
@@ -202,6 +203,7 @@ export default function Todo() {
       <TodoSetupSheet
         open={sheet === 'setup'}
         current={store.url}
+        build={build}
         onClose={() => setSheet(null)}
         onConnect={store.connect}
         onDisconnect={store.disconnect}
