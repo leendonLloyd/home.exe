@@ -83,7 +83,7 @@ export default function Workout() {
       </header>
 
       <div className="sub-bar">
-        <div className="seg" role="group" aria-label="Choose a plan">
+        <div className="plan-switch" role="group" aria-label="Choose a plan">
           {PLANS.map((entry) => (
             <button
               key={entry.id}

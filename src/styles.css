@@ -236,6 +236,7 @@ p {
   color: var(--muted);
   font-size: 13px;
   font-weight: 600;
+  text-align: center;
 }
 
 .seg.active {
@@ -743,7 +744,10 @@ button {
   background: var(--bg);
 }
 
-.seg {
+/* Plan switcher. Named apart from .seg, which is a *button* in the laundry
+   and to-do filters — sharing the name let this block's display:flex land on
+   those buttons and knock their labels off-centre. */
+.plan-switch {
   display: flex;
   border: 1px solid var(--line);
   border-radius: 11px;
@@ -751,7 +755,7 @@ button {
   background: var(--surface);
 }
 
-.seg button {
+.plan-switch button {
   flex: 1;
   padding: 9px 8px;
   border: 0;
@@ -761,11 +765,11 @@ button {
   font-weight: 600;
 }
 
-.seg button + button {
+.plan-switch button + button {
   border-left: 1px solid var(--line);
 }
 
-.seg button[aria-pressed='true'] {
+.plan-switch button[aria-pressed='true'] {
   background: var(--accent);
   color: #ffffff;
 }

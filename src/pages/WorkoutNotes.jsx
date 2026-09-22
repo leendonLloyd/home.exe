@@ -21,7 +21,7 @@ export default function WorkoutNotes() {
       </header>
 
       <main className="scroll">
-        <div className="seg" role="group" aria-label="Choose a plan">
+        <div className="plan-switch" role="group" aria-label="Choose a plan">
           {PLANS.map((entry) => (
             <button key={entry.id} type="button" aria-pressed={entry.id === plan.id} onClick={() => store.setPlan(entry.id)}>
               {entry.tab}

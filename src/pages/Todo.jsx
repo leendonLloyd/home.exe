@@ -19,12 +19,14 @@ export default function Todo() {
   const { tasks, summary, priorityOptions } = store.data;
 
   const [filter, setFilter] = useState('open');
-  const [collapsed, setCollapsed] = useState({});
+  // Tracks what's open rather than what's closed, so groups that arrive with
+  // a later sync default to collapsed instead of springing open.
+  const [expanded, setExpanded] = useState({});
   const [sheet, setSheet] = useState(null);
   const [editing, setEditing] = useState(null);
   const [presetCategory, setPresetCategory] = useState('');
 
-  const toggleSection = (key) => setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggleSection = (key) => setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const visible = useMemo(
     () => tasks.filter((task) => (filter === 'all' ? true : filter === 'done' ? task.done : !task.done)),
@@ -136,18 +138,18 @@ export default function Todo() {
             <button
               type="button"
               className="group-head"
-              aria-expanded={!collapsed[group.key]}
+              aria-expanded={Boolean(expanded[group.key])}
               onClick={() => toggleSection(group.key)}
             >
               <span className="dot" />
               <h2>{group.key}</h2>
               <span className="badge">{group.entries.length}</span>
-              <span className={collapsed[group.key] ? 'caret' : 'caret open'} aria-hidden="true">
+              <span className={expanded[group.key] ? 'caret open' : 'caret'} aria-hidden="true">
                 ⌄
               </span>
             </button>
 
-            {collapsed[group.key] ? null : (
+            {expanded[group.key] ? (
               <div className="stack-rows">
                 {group.entries.map(({ task, label }) => (
                   <TaskRow
@@ -165,7 +167,7 @@ export default function Todo() {
                   + Add to {group.key}
                 </button>
               </div>
-            )}
+            ) : null}
           </section>
         ))}
 
