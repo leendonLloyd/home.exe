@@ -78,6 +78,20 @@ Payment stages are discovered as whatever columns sit between `TOTAL PACKAGE`
 and `FINAL PAYMENT`, so adding a `6TH PAYMENT` to the sheet needs no code
 change. Vendors sort by balance, biggest first.
 
+**Due dates need a column in the sheet.** `PAYMENT MONITORING` has no date
+column, so the "due within 7 days" banner stays hidden until you add one.
+Any of `DUE DATE`, `DUE`, `PAYMENT DUE`, `NEXT DUE`, `DUE ON` or `SCHEDULE`
+works, anywhere in the row — the header is found by name, not position. The
+banner then lists who is owed and how much, and opens to the instalment history
+behind each figure. Rows the sheet totals for you never appear in it.
+
+**Marking a vendor paid** writes the amount into the first empty instalment
+column — the ones `FINAL PAYMENT` subtracts from — so the sheet recalculates
+the balance itself. Nothing ever writes to `FINAL PAYMENT`. If every instalment
+column on a row is filled there is nowhere to put it, and the app says so
+rather than overwriting one. Like the to-do list, the write names the vendor it
+expects in that row and backs out if the sheet has moved underneath it.
+
 **Nothing about money is added up here.** `TOTAL PACKAGE` and `FINAL PAYMENT`
 come straight from the sheet, and paid is `package − balance` — the inverse of
 the sheet's own `FINAL PAYMENT` formula, so it always agrees with it. Summing

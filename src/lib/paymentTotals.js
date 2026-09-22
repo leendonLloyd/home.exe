@@ -67,3 +67,37 @@ export function summarise(rows, excluded) {
       : { ...computed, source: null },
   };
 }
+
+const DUE_SOON_DAYS = 7;
+
+const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+/** Whole days from today to `iso`, or null when there is no date. */
+export function daysUntil(iso, today = new Date()) {
+  if (!iso) return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return Math.round((startOfDay(new Date(y, m - 1, d)) - startOfDay(today)) / 86400000);
+}
+
+export function dueLabel(days) {
+  if (days == null) return '';
+  if (days === 0) return 'due today';
+  if (days === 1) return 'due tomorrow';
+  if (days > 1) return `due in ${days} days`;
+  if (days === -1) return '1 day overdue';
+  return `${-days} days overdue`;
+}
+
+/**
+ * Vendors with money still owing and a due date inside the window — overdue
+ * first, then soonest. Rows the sheet totals for you are never included.
+ */
+export function dueSoon(rows, today = new Date(), within = DUE_SOON_DAYS) {
+  return rows
+    .filter((row) => !isTotalRow(row.vendor))
+    .filter((row) => (row.balance || 0) > 0 && row.due)
+    .map((row) => ({ row, days: daysUntil(row.due, today) }))
+    .filter((entry) => entry.days != null && entry.days <= within)
+    .sort((a, b) => a.days - b.days);
+}

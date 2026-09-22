@@ -45,6 +45,12 @@ function doPost(e) {
     const body = JSON.parse(e.postData.contents);
     const action = String(body.action || '');
 
+    // Namespaced actions answer with their own feature's fresh state.
+    if (action === 'payments.pay') {
+      const paid = payVendor_(body);
+      return json_(paid.ok ? { ...paid, ...readPayments_() } : paid);
+    }
+
     // Unprefixed actions belong to the to-do list, which shipped before
     // anything else was here. New features should namespace theirs as
     // "feature.action" so they can never collide with these.

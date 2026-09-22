@@ -16,6 +16,10 @@ const PAYMENTS_TOTAL = 'TOTAL PACKAGE';
 
 const PAYMENTS_BALANCE = 'FINAL PAYMENT';
 
+// Optional. The tab has no date column today; add any one of these headers and
+// the app starts flagging what is due without needing a code change.
+const PAYMENTS_DUE = ['DUE DATE', 'DUE', 'PAYMENT DUE', 'NEXT DUE', 'DUE ON', 'SCHEDULE'];
+
 /**
  * The payment stages are whatever columns sit between TOTAL PACKAGE and FINAL
  * PAYMENT, rather than a fixed list of "1ST PAYMENT".."5TH PAYMENT" — adding a
@@ -46,6 +50,12 @@ function readPayments_() {
   const balanceCol = header.indexOf(PAYMENTS_BALANCE) + 1;
   const notesCol = header.indexOf('NOTES') + 1;
   const paxCol = header.indexOf('# OF PAX') + 1;
+
+  let dueCol = 0;
+  for (let i = 0; i < PAYMENTS_DUE.length && !dueCol; i += 1) {
+    const at = header.indexOf(PAYMENTS_DUE[i]);
+    if (at >= 0) dueCol = at + 1;
+  }
 
   const stages = [];
   if (totalCol && balanceCol) {
@@ -83,6 +93,11 @@ function readPayments_() {
         stages: paidStages,
         notes: notesCol ? String(shown[i][notesCol - 1] || '').trim() : '',
         pax: paxCol ? String(shown[i][paxCol - 1] || '').trim() : '',
+        due: dueCol ? isoDate_(raw[i][dueCol - 1]) : '',
+        dueText: dueCol ? String(shown[i][dueCol - 1] || '').trim() : '',
+        // Which instalment column a payment would land in, so the app can say
+        // up front whether there is room to record one.
+        nextStage: nextStage_(raw[i], stages),
       });
     }
   }
@@ -90,8 +105,82 @@ function readPayments_() {
   return {
     tab: PAYMENTS_SHEET,
     headerRow: headerRow,
+    headers: labels.filter(String),
     stageLabels: stages.map((s) => s.label),
+    hasDueDates: Boolean(dueCol),
     rows: rows,
     fetchedAt: new Date().toISOString(),
   };
+}
+
+/** The first instalment column with nothing in it, or null when all are used. */
+function nextStage_(rowValues, stages) {
+  for (let i = 0; i < stages.length; i += 1) {
+    const v = rowValues[stages[i].col - 1];
+    if (v === '' || v == null) return stages[i].label;
+  }
+  return null;
+}
+
+/**
+ * Records a payment by writing it into the first empty instalment column, which
+ * is what the sheet's own FINAL PAYMENT formula subtracts from. Nothing writes
+ * to FINAL PAYMENT itself — that stays the sheet's calculation.
+ */
+function payVendor_(body) {
+  const amount = Number(body.amount);
+  if (!(amount > 0)) return { ok: false, error: 'Amount must be greater than zero.' };
+
+  const sheet = tab_(PAYMENTS_SHEET);
+  const row = Number(body.row);
+  if (!row) return { ok: false, error: 'Missing row' };
+
+  const width = Math.max(sheet.getLastColumn(), 1);
+  const lastRow = sheet.getLastRow();
+  const scan = sheet.getRange(1, 1, Math.min(20, lastRow || 1), width).getDisplayValues();
+  const norm = (v) => String(v == null ? '' : v).trim().toUpperCase();
+
+  let headerRow = 0;
+  for (let r = 0; r < scan.length; r += 1) {
+    if (scan[r].some((v) => norm(v) === PAYMENTS_HEADER)) {
+      headerRow = r + 1;
+      break;
+    }
+  }
+  if (!headerRow) return { ok: false, error: 'Could not find the payments header row' };
+
+  const header = scan[headerRow - 1].map(norm);
+  const labels = scan[headerRow - 1].map((v) => String(v == null ? '' : v).trim());
+  const vendorCol = header.indexOf(PAYMENTS_HEADER) + 1;
+  const totalCol = header.indexOf(PAYMENTS_TOTAL) + 1;
+  const balanceCol = header.indexOf(PAYMENTS_BALANCE) + 1;
+
+  // Same guard as the to-do list: rows shift, so name what you expect to find.
+  const actual = String(sheet.getRange(row, vendorCol).getDisplayValue() || '').trim();
+  if (actual !== String(body.expectVendor == null ? '' : body.expectVendor).trim()) {
+    return {
+      ok: false,
+      stale: true,
+      error: 'Row ' + row + ' now reads "' + actual + '". The sheet changed — reload before recording a payment.',
+    };
+  }
+
+  const stages = [];
+  for (let c = totalCol + 1; c < balanceCol; c += 1) {
+    if (labels[c - 1]) stages.push({ col: c, label: labels[c - 1] });
+  }
+
+  const values = sheet.getRange(row, 1, 1, width).getValues()[0];
+  let target = null;
+  for (let i = 0; i < stages.length && !target; i += 1) {
+    const v = values[stages[i].col - 1];
+    if (v === '' || v == null) target = stages[i];
+  }
+  if (!target) {
+    return { ok: false, error: 'Every instalment column on this row is already filled, so there is nowhere to record it.' };
+  }
+
+  sheet.getRange(row, target.col).setValue(amount);
+  SpreadsheetApp.flush();
+  return { ok: true, row: row, stage: target.label, amount: amount };
 }

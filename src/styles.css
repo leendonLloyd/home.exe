@@ -1308,3 +1308,43 @@ table.log .sum {
 .pay-amount strong {
   font-size: 15px;
 }
+
+.due-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.due-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.due-head > span:first-child {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.due-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.due-vendor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

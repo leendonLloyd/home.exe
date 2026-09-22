@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import DueBanner from '../components/DueBanner';
 import PaymentRow from '../components/PaymentRow';
 import PaymentSheet from '../components/PaymentSheet';
 import { money } from '../lib/money';
+import { dueSoon } from '../lib/paymentTotals';
 import { usePaymentsStore } from '../lib/paymentsStore';
 
 const FILTERS = [
@@ -15,6 +17,10 @@ export default function Payments() {
   const store = usePaymentsStore();
   const [filter, setFilter] = useState('due');
   const [detail, setDetail] = useState(null);
+  // Fixed per visit so "due in N days" cannot shift while you are reading it.
+  const [today] = useState(() => new Date());
+
+  const soon = useMemo(() => dueSoon(store.data.rows, today), [store.data.rows, today]);
 
   const rows = useMemo(() => {
     const settled = (row) => row.balance === 0 && row.total != null;
@@ -75,6 +81,8 @@ export default function Payments() {
             </button>
           </div>
         ) : null}
+
+        <DueBanner entries={soon} onOpenVendor={setDetail} />
 
         <div className="kpi-total">
           <div>
@@ -138,6 +146,8 @@ export default function Payments() {
         row={detail}
         excluded={detail ? store.excluded.includes(detail.vendor) : false}
         onClose={() => setDetail(null)}
+        busy={store.busy}
+        onRecordPayment={store.recordPayment}
         onToggleExcluded={(vendor) => {
           store.toggleExcluded(vendor);
           setDetail(null);

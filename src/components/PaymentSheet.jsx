@@ -1,8 +1,18 @@
+import { useEffect, useState } from 'react';
 import { money } from '../lib/money';
 import { instalmentsOf, paidOf } from '../lib/paymentTotals';
 import Sheet from './Sheet';
 
-export default function PaymentSheet({ open, row, excluded, onClose, onToggleExcluded }) {
+export default function PaymentSheet({ open, row, excluded, busy, onClose, onToggleExcluded, onRecordPayment }) {
+  const [paying, setPaying] = useState(false);
+  const [amount, setAmount] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    setPaying(false);
+    setAmount(row && row.balance != null ? String(row.balance) : '');
+  }, [open, row]);
+
   if (!row) return null;
 
   const stages = row.stages.filter((stage) => stage.amount);
@@ -45,6 +55,55 @@ export default function PaymentSheet({ open, row, excluded, onClose, onToggleExc
       {row.notes ? <p className="muted small">Note: {row.notes}</p> : null}
       {row.pax ? <p className="muted small">Pax: {row.pax}</p> : null}
       <p className="muted small">Row {row.row} of the sheet. This view never writes.</p>
+
+      {row.nextStage ? (
+        <div className="danger-zone">
+          {paying ? (
+            <>
+              <label className="field-label" htmlFor="pay-amount">
+                Amount to record
+              </label>
+              <input
+                id="pay-amount"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+              />
+              <p className="muted small">
+                Goes into <strong>{row.nextStage}</strong>, the first empty instalment column. The sheet recalculates
+                the balance itself — nothing writes to FINAL PAYMENT.
+              </p>
+              <div className="row-form">
+                <button type="button" className="btn block" onClick={() => setPaying(false)}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn primary block"
+                  disabled={busy || !(parseFloat(amount) > 0)}
+                  onClick={() => {
+                    onRecordPayment(row, parseFloat(amount));
+                    onClose();
+                  }}
+                >
+                  {busy ? 'Saving…' : 'Record payment'}
+                </button>
+              </div>
+            </>
+          ) : (
+            <button type="button" className="btn primary block" disabled={busy} onClick={() => setPaying(true)}>
+              Mark as paid
+            </button>
+          )}
+        </div>
+      ) : (
+        <p className="muted small">
+          Every instalment column on this row is filled, so a further payment has nowhere to go. Add a column in the
+          sheet, or record it there directly.
+        </p>
+      )}
 
       <div className="danger-zone">
         <p className="muted small">
