@@ -11,10 +11,15 @@ planner sheet.
 
    **If you made a standalone script** rather than opening it from the sheet,
    `SpreadsheetApp.getActive()` has nothing to return and every call fails with
-   *"not attached to a spreadsheet"*. Set `SPREADSHEET_ID` at the top of the file
-   to the id in your sheet's URL — the part between `/d/` and `/edit` — and it
-   will work the same way. That constant is intentionally left blank in this
-   repo so a private sheet id isn't published with the site.
+   *"not attached to a spreadsheet"*. Tell it which sheet to open:
+
+   **Project Settings → Script properties → Add** `SPREADSHEET_ID` = the id from
+   your sheet's URL, the part between `/d/` and `/edit`.
+
+   Script properties live in the Apps Script project, not in the code, so the id
+   never lands in this public repo. The `SPREADSHEET_ID` constant at the top of
+   the file works too and takes precedence — but anything you put there gets
+   committed and published, so prefer the property.
 3. **Deploy → New deployment → Web app**
    - Execute as: **Me**
    - Who has access: **Anyone**

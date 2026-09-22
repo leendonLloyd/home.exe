@@ -88,9 +88,18 @@ export default function TaskSheet({ open, task, categories, priorityOptions, pre
       </label>
       <input id="task-due" type="date" value={draft.due} onChange={(event) => patch({ due: event.target.value })} />
 
-      {priorityOptions.length > 0 ? (
+      <label className="field-label" htmlFor="task-priority">
+        Priority
+      </label>
+      {priorityOptions.length === 0 ? (
+        <input
+          id="task-priority"
+          value={draft.priority}
+          onChange={(event) => patch({ priority: event.target.value })}
+          placeholder="Optional"
+        />
+      ) : (
         <>
-          <label className="field-label">Priority</label>
           <div className="chip-wrap">
             <button type="button" className={draft.priority === '' ? 'chip active' : 'chip'} onClick={() => patch({ priority: '' })}>
               None
@@ -107,7 +116,7 @@ export default function TaskSheet({ open, task, categories, priorityOptions, pre
             ))}
           </div>
         </>
-      ) : null}
+      )}
 
       <label className="field-label" htmlFor="task-notes">
         Notes

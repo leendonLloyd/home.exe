@@ -10,10 +10,12 @@
  * column or inserting rows above the table won't break the app.
  */
 
-// Leave blank when this script lives inside the sheet (Extensions > Apps
-// Script). Set it to the id from the sheet URL when the script is a standalone
-// project, because a standalone script has no "active" spreadsheet to find:
-//   docs.google.com/spreadsheets/d/THIS_PART_HERE/edit
+// Only needed when this script is a standalone project rather than one created
+// from the sheet, because a standalone script has no "active" spreadsheet.
+//
+// Prefer Project Settings > Script properties > SPREADSHEET_ID, which keeps the
+// id out of the code entirely. Filling the constant in also works, but this
+// file is committed to a public repo, so an id left here gets published.
 const SPREADSHEET_ID = '';
 
 const SHEET_NAME = 'TO DO LIST';
@@ -64,16 +66,26 @@ function json_(payload) {
   return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON);
 }
 
+function configuredId_() {
+  if (SPREADSHEET_ID) return SPREADSHEET_ID;
+  try {
+    return PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID') || '';
+  } catch (err) {
+    return '';
+  }
+}
+
 function book_() {
-  if (SPREADSHEET_ID) return SpreadsheetApp.openById(SPREADSHEET_ID);
+  const id = configuredId_();
+  if (id) return SpreadsheetApp.openById(id);
 
   const active = SpreadsheetApp.getActive();
   if (active) return active;
 
   throw new Error(
     'This script is not attached to a spreadsheet, so there is no active one to read. ' +
-    'Either recreate it from the sheet via Extensions > Apps Script, or set SPREADSHEET_ID ' +
-    'at the top of this file to the id in the sheet URL, then redeploy a new version.'
+    'Add the sheet id under Project Settings > Script properties as SPREADSHEET_ID ' +
+    '(or set the constant at the top of this file), then redeploy a new version.'
   );
 }
 
@@ -133,17 +145,48 @@ function summary_(sheet, headerRow, width) {
   return out;
 }
 
-function priorityOptions_(sheet, cols, firstDataRow) {
+/**
+ * A dropdown rule can list its values inline or point at a range, can sit on
+ * any row rather than the first, and may not exist at all. Try each in turn,
+ * then fold in whatever values are already in use so the app always has
+ * something to offer.
+ */
+function priorityOptions_(sheet, cols, firstDataRow, lastRow) {
   if (!cols.priority) return [];
-  try {
-    const rule = sheet.getRange(firstDataRow, cols.priority).getDataValidation();
-    if (!rule) return [];
-    const values = rule.getCriteriaValues();
-    const list = values && values[0];
-    return Array.isArray(list) ? list.map(String) : [];
-  } catch (err) {
-    return [];
+
+  const found = [];
+  const push = (value) => {
+    const text = String(value == null ? '' : value).trim();
+    if (text && found.indexOf(text) === -1) found.push(text);
+  };
+
+  const probe = Math.min(10, Math.max(lastRow - firstDataRow + 1, 1));
+  for (let i = 0; i < probe; i += 1) {
+    try {
+      const rule = sheet.getRange(firstDataRow + i, cols.priority).getDataValidation();
+      if (!rule) continue;
+      const first = rule.getCriteriaValues()[0];
+      if (Array.isArray(first)) {
+        first.forEach(push);
+        break;
+      }
+      if (first && typeof first.getValues === 'function') {
+        first.getValues().forEach((r) => r.forEach(push));
+        break;
+      }
+    } catch (err) {
+      // Rule shapes vary by criteria type; keep probing rather than giving up.
+    }
   }
+
+  if (lastRow >= firstDataRow) {
+    sheet
+      .getRange(firstDataRow, cols.priority, lastRow - firstDataRow + 1, 1)
+      .getDisplayValues()
+      .forEach((r) => push(r[0]));
+  }
+
+  return found;
 }
 
 function isoDate_(value) {
@@ -186,7 +229,7 @@ function readAll_() {
     fields: Object.keys(cols),
     tasks: tasks,
     summary: summary_(sheet, headerRow, width),
-    priorityOptions: priorityOptions_(sheet, cols, firstDataRow),
+    priorityOptions: priorityOptions_(sheet, cols, firstDataRow, lastRow),
     fetchedAt: new Date().toISOString(),
   };
 }
