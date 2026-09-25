@@ -1,0 +1,33 @@
+rules_version = '2';
+
+// Everything lives under one household document, because this is two people
+// sharing one set of data rather than a multi-tenant app. The rules are the
+// only thing standing between that data and the public internet: the web
+// config in the app is meant to be public, so access is decided here.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Replace with the two Google accounts that may read and write.
+    function household() {
+      return [
+        'REPLACE_WITH_YOUR_GMAIL',
+        'REPLACE_WITH_HER_GMAIL'
+      ];
+    }
+
+    function member() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in household();
+    }
+
+    match /households/home/{document=**} {
+      allow read, write: if member();
+    }
+
+    // Anything outside that subtree is denied, including by a signed-in member.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
