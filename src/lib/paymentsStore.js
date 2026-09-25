@@ -33,26 +33,30 @@ export const usePaymentsStore = () => {
   // name is what the exclusion actually means.
   const [excluded, setExcluded] = useState(() => readJson(EXCLUDE_KEY, []));
 
+  const accept = useCallback((payload) => {
+    const next = {
+      rows: payload.rows ?? [],
+      stageLabels: payload.stageLabels ?? [],
+      hasDueDates: Boolean(payload.hasDueDates),
+      fetchedAt: payload.fetchedAt ?? new Date().toISOString(),
+    };
+    setData(next);
+    writeJson(CACHE_KEY, next);
+    return next;
+  }, []);
+
   const refresh = useCallback(async () => {
     if (!url) return;
     setLoading(true);
     try {
-      const payload = await fetchPayments(url);
-      const next = {
-        rows: payload.rows ?? [],
-        stageLabels: payload.stageLabels ?? [],
-        hasDueDates: Boolean(payload.hasDueDates),
-        fetchedAt: payload.fetchedAt ?? new Date().toISOString(),
-      };
-      setData(next);
-      writeJson(CACHE_KEY, next);
+      accept(await fetchPayments(url));
       setError(null);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [url]);
+  }, [url, accept]);
 
   useEffect(() => {
     if (url) refresh();
@@ -74,20 +78,7 @@ export const usePaymentsStore = () => {
     if (!url) return false;
     setBusy(true);
     try {
-      const payload = await sendAction(url, {
-        action: 'payments.pay',
-        row: row.row,
-        expectVendor: row.vendor,
-        amount,
-      });
-      const next = {
-        rows: payload.rows ?? [],
-        stageLabels: payload.stageLabels ?? [],
-        hasDueDates: Boolean(payload.hasDueDates),
-        fetchedAt: payload.fetchedAt ?? new Date().toISOString(),
-      };
-      setData(next);
-      writeJson(CACHE_KEY, next);
+      accept(await sendAction(url, { action: 'payments.pay', row: row.row, expectVendor: row.vendor, amount }));
       setError(null);
       return true;
     } catch (err) {
@@ -97,21 +88,14 @@ export const usePaymentsStore = () => {
     } finally {
       setBusy(false);
     }
-  }, [url, refresh]);
+  }, [url, refresh, accept]);
 
   const addVendor = useCallback(async (fields) => {
     if (!url) return false;
     setBusy(true);
     try {
       const payload = await sendAction(url, { action: 'payments.add', fields });
-      const next = {
-        rows: payload.rows ?? [],
-        stageLabels: payload.stageLabels ?? [],
-        hasDueDates: Boolean(payload.hasDueDates),
-        fetchedAt: payload.fetchedAt ?? new Date().toISOString(),
-      };
-      setData(next);
-      writeJson(CACHE_KEY, next);
+      accept(payload);
       // The sheet's own total is the headline, so a formula that did not widen
       // to cover the new row would quietly under-report from here on.
       setError(payload.countedInTotal === false
@@ -125,7 +109,28 @@ export const usePaymentsStore = () => {
     } finally {
       setBusy(false);
     }
-  }, [url, refresh]);
+  }, [url, refresh, accept]);
 
-  return { url, data, loading, busy, error, refresh, excluded, toggleExcluded, totals, recordPayment, addVendor, dismissError: () => setError(null) };
+  const setDueDate = useCallback(async (row, due) => {
+    if (!url) return false;
+    setBusy(true);
+    try {
+      accept(await sendAction(url, {
+        action: 'payments.update',
+        row: row.row,
+        expectVendor: row.vendor,
+        fields: { due },
+      }));
+      setError(null);
+      return true;
+    } catch (err) {
+      setError(err.message);
+      if (err.stale) refresh();
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }, [url, refresh, accept]);
+
+  return { url, data, loading, busy, error, refresh, excluded, toggleExcluded, totals, recordPayment, addVendor, setDueDate, dismissError: () => setError(null) };
 };

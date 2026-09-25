@@ -3,19 +3,23 @@ import { money } from '../lib/money';
 import { instalmentsOf, paidOf } from '../lib/paymentTotals';
 import Sheet from './Sheet';
 
-export default function PaymentSheet({ open, row, excluded, busy, onClose, onToggleExcluded, onRecordPayment }) {
+export default function PaymentSheet({ open, row, excluded, busy, hasDueDates, onClose, onToggleExcluded, onRecordPayment, onSetDueDate }) {
   const [paying, setPaying] = useState(false);
   const [amount, setAmount] = useState('');
+  const [dueEdit, setDueEdit] = useState(null);
 
   useEffect(() => {
     if (!open) return;
     setPaying(false);
     setAmount(row && row.balance != null ? String(row.balance) : '');
+    setDueEdit(null);
   }, [open, row]);
 
   if (!row) return null;
 
   const stages = row.stages.filter((stage) => stage.amount);
+  const saved = row.due || '';
+  const due = dueEdit === null ? saved : dueEdit;
   const paid = paidOf(row);
   const instalments = instalmentsOf(row);
   // Payments recorded against a roll-up leave the component line's instalment
@@ -54,7 +58,35 @@ export default function PaymentSheet({ open, row, excluded, busy, onClose, onTog
       ) : null}
       {row.notes ? <p className="muted small">Note: {row.notes}</p> : null}
       {row.pax ? <p className="muted small">Pax: {row.pax}</p> : null}
-      <p className="muted small">Row {row.row} of the sheet. This view never writes.</p>
+      <p className="muted small">Row {row.row} of the sheet.</p>
+
+      {hasDueDates ? (
+        <>
+          <label className="field-label" htmlFor="v-duedate">
+            Due date
+          </label>
+          <div className="row-form">
+            <input id="v-duedate" type="date" value={due} onChange={(event) => setDueEdit(event.target.value)} />
+            <button
+              type="button"
+              className="btn"
+              disabled={busy || due === saved}
+              onClick={() => onSetDueDate(row, due)}
+            >
+              {busy ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+          {due ? (
+            <button type="button" className="btn ghost block" disabled={busy} onClick={() => { setDueEdit(''); onSetDueDate(row, ''); }}>
+              Clear due date
+            </button>
+          ) : null}
+        </>
+      ) : (
+        <p className="muted small">
+          Add a <strong>DUE DATE</strong> column to the tab to set one here.
+        </p>
+      )}
 
       {row.nextStage ? (
         <div className="danger-zone">

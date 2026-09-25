@@ -125,6 +125,17 @@ function nextStage_(rowValues, stages) {
   return null;
 }
 
+/** Rows shift, so a write names the vendor it expects to find there. */
+function guardVendorRow_(L, row, expectVendor) {
+  const actual = String(L.sheet.getRange(row, L.vendorCol).getDisplayValue() || '').trim();
+  if (actual === String(expectVendor == null ? '' : expectVendor).trim()) return null;
+  return {
+    ok: false,
+    stale: true,
+    error: 'Row ' + row + ' now reads "' + actual + '". The sheet changed — reload before editing.',
+  };
+}
+
 /**
  * Records a payment by writing it into the first empty instalment column, which
  * is what the sheet's own FINAL PAYMENT formula subtracts from. Nothing writes
@@ -134,60 +145,59 @@ function payVendor_(body) {
   const amount = Number(body.amount);
   if (!(amount > 0)) return { ok: false, error: 'Amount must be greater than zero.' };
 
-  const sheet = tab_(PAYMENTS_SHEET);
   const row = Number(body.row);
   if (!row) return { ok: false, error: 'Missing row' };
 
-  const width = Math.max(sheet.getLastColumn(), 1);
-  const lastRow = sheet.getLastRow();
-  const scan = sheet.getRange(1, 1, Math.min(20, lastRow || 1), width).getDisplayValues();
-  const norm = (v) => String(v == null ? '' : v).trim().toUpperCase();
+  const L = paymentsLayout_();
+  const stale = guardVendorRow_(L, row, body.expectVendor);
+  if (stale) return stale;
 
-  let headerRow = 0;
-  for (let r = 0; r < scan.length; r += 1) {
-    if (scan[r].some((v) => norm(v) === PAYMENTS_HEADER)) {
-      headerRow = r + 1;
-      break;
-    }
-  }
-  if (!headerRow) return { ok: false, error: 'Could not find the payments header row' };
-
-  const header = scan[headerRow - 1].map(norm);
-  const labels = scan[headerRow - 1].map((v) => String(v == null ? '' : v).trim());
-  const vendorCol = header.indexOf(PAYMENTS_HEADER) + 1;
-  const totalCol = header.indexOf(PAYMENTS_TOTAL) + 1;
-  const balanceCol = header.indexOf(PAYMENTS_BALANCE) + 1;
-
-  // Same guard as the to-do list: rows shift, so name what you expect to find.
-  const actual = String(sheet.getRange(row, vendorCol).getDisplayValue() || '').trim();
-  if (actual !== String(body.expectVendor == null ? '' : body.expectVendor).trim()) {
-    return {
-      ok: false,
-      stale: true,
-      error: 'Row ' + row + ' now reads "' + actual + '". The sheet changed — reload before recording a payment.',
-    };
-  }
-
-  const stages = [];
-  for (let c = totalCol + 1; c < balanceCol; c += 1) {
-    if (labels[c - 1]) stages.push({ col: c, label: labels[c - 1] });
-  }
-
-  const values = sheet.getRange(row, 1, 1, width).getValues()[0];
+  const values = L.sheet.getRange(row, 1, 1, L.width).getValues()[0];
   let target = null;
-  for (let i = 0; i < stages.length && !target; i += 1) {
-    const v = values[stages[i].col - 1];
-    if (v === '' || v == null) target = stages[i];
+  for (let i = 0; i < L.stages.length && !target; i += 1) {
+    const v = values[L.stages[i].col - 1];
+    if (v === '' || v == null) target = L.stages[i];
   }
   if (!target) {
     return { ok: false, error: 'Every instalment column on this row is already filled, so there is nowhere to record it.' };
   }
 
-  sheet.getRange(row, target.col).setValue(amount);
+  L.sheet.getRange(row, target.col).setValue(amount);
   SpreadsheetApp.flush();
   return { ok: true, row: row, stage: target.label, amount: amount };
 }
 
+/**
+ * Edits the columns that are plain data — the due date and the note. Amounts
+ * are not editable here: a package or an instalment changes what is owed, and
+ * those go through the payment path or the sheet itself.
+ */
+function updateVendor_(body) {
+  const row = Number(body.row);
+  if (!row) return { ok: false, error: 'Missing row' };
+
+  const L = paymentsLayout_();
+  const stale = guardVendorRow_(L, row, body.expectVendor);
+  if (stale) return stale;
+
+  const fields = body.fields || {};
+
+  if (Object.prototype.hasOwnProperty.call(fields, 'due')) {
+    if (!L.dueCol) {
+      return { ok: false, error: 'This tab has no due date column. Add one headed DUE DATE and try again.' };
+    }
+    const cell = L.sheet.getRange(row, L.dueCol);
+    if (!fields.due) cell.clearContent();
+    else cell.setValue(new Date(String(fields.due) + 'T00:00:00'));
+  }
+
+  if (Object.prototype.hasOwnProperty.call(fields, 'notes') && L.notesCol) {
+    L.sheet.getRange(row, L.notesCol).setValue(String(fields.notes == null ? '' : fields.notes));
+  }
+
+  SpreadsheetApp.flush();
+  return { ok: true, row: row };
+}
 
 /** Shared column map, so the write paths agree with the read path. */
 function paymentsLayout_() {

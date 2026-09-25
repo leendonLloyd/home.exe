@@ -99,6 +99,10 @@ column on a row is filled there is nowhere to put it, and the app says so
 rather than overwriting one. Like the to-do list, the write names the vendor it
 expects in that row and backs out if the sheet has moved underneath it.
 
+**Editing a vendor** covers the due date only. Amounts are not editable there:
+a package or an instalment changes what is owed, and those go through the
+payment path or the sheet itself. Clearing the field removes the date.
+
 **Adding a vendor** writes a new row just above the last existing one, not
 below it. A grand total written as a `SUM` over the vendor rows only widens
 when a row is inserted *inside* that range, so appending underneath would leave

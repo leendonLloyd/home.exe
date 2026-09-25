@@ -46,8 +46,12 @@ function doPost(e) {
     const action = String(body.action || '');
 
     // Namespaced actions answer with their own feature's fresh state.
-    if (action === 'payments.pay' || action === 'payments.add') {
-      const done = action === 'payments.pay' ? payVendor_(body) : addVendor_(body);
+    if (action.indexOf('payments.') === 0) {
+      const done =
+        action === 'payments.pay' ? payVendor_(body) :
+        action === 'payments.add' ? addVendor_(body) :
+        action === 'payments.update' ? updateVendor_(body) :
+        { ok: false, error: 'Unknown action: ' + action };
       return json_(done.ok ? { ...done, ...readPayments_() } : done);
     }
 

@@ -167,7 +167,9 @@ export default function Payments() {
         excluded={detail ? store.excluded.includes(detail.vendor) : false}
         onClose={() => setDetail(null)}
         busy={store.busy}
+        hasDueDates={store.data.hasDueDates}
         onRecordPayment={store.recordPayment}
+        onSetDueDate={store.setDueDate}
         onToggleExcluded={(vendor) => {
           store.toggleExcluded(vendor);
           setDetail(null);
