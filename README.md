@@ -99,6 +99,19 @@ column on a row is filled there is nowhere to put it, and the app says so
 rather than overwriting one. Like the to-do list, the write names the vendor it
 expects in that row and backs out if the sheet has moved underneath it.
 
+**Adding a vendor** writes a new row just above the last existing one, not
+below it. A grand total written as a `SUM` over the vendor rows only widens
+when a row is inserted *inside* that range, so appending underneath would leave
+the new vendor out of the sheet's own total — the number the app shows as the
+headline. The row below is copied first so the new one inherits the
+`FINAL PAYMENT` formula and lets the sheet work the balance out. The reply says
+whether the grand total actually moved, and the app warns if it didn't.
+
+Only the vendor name is required. Down payment and 1st payment are on the form;
+2nd through 5th sit behind a toggle. Instalments left blank are omitted
+entirely rather than written as `0`, which would read as "paid nothing" instead
+of "not yet due".
+
 **Nothing about money is added up here.** `TOTAL PACKAGE` and `FINAL PAYMENT`
 come straight from the sheet, and paid is `package − balance` — the inverse of
 the sheet's own `FINAL PAYMENT` formula, so it always agrees with it. Summing

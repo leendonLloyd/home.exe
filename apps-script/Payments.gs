@@ -20,6 +20,9 @@ const PAYMENTS_BALANCE = 'FINAL PAYMENT';
 // the app starts flagging what is due without needing a code change.
 const PAYMENTS_DUE = ['DUE DATE', 'DUE', 'PAYMENT DUE', 'NEXT DUE', 'DUE ON', 'SCHEDULE'];
 
+// The vendor table ends here; rows below are other sections.
+const PAYMENTS_GRAND = /^(grand\s+total|total\s+amount)\b/i;
+
 /**
  * The payment stages are whatever columns sit between TOTAL PACKAGE and FINAL
  * PAYMENT, rather than a fixed list of "1ST PAYMENT".."5TH PAYMENT" — adding a
@@ -183,4 +186,127 @@ function payVendor_(body) {
   sheet.getRange(row, target.col).setValue(amount);
   SpreadsheetApp.flush();
   return { ok: true, row: row, stage: target.label, amount: amount };
+}
+
+
+/** Shared column map, so the write paths agree with the read path. */
+function paymentsLayout_() {
+  const sheet = tab_(PAYMENTS_SHEET);
+  const width = Math.max(sheet.getLastColumn(), 1);
+  const lastRow = sheet.getLastRow();
+  const scan = sheet.getRange(1, 1, Math.min(20, lastRow || 1), width).getDisplayValues();
+  const norm = (v) => String(v == null ? '' : v).trim().toUpperCase();
+
+  let headerRow = 0;
+  for (let r = 0; r < scan.length; r += 1) {
+    if (scan[r].some((v) => norm(v) === PAYMENTS_HEADER)) {
+      headerRow = r + 1;
+      break;
+    }
+  }
+  if (!headerRow) throw new Error('Could not find a header row containing "' + PAYMENTS_HEADER + '"');
+
+  const header = scan[headerRow - 1].map(norm);
+  const labels = scan[headerRow - 1].map((v) => String(v == null ? '' : v).trim());
+  const totalCol = header.indexOf(PAYMENTS_TOTAL) + 1;
+  const balanceCol = header.indexOf(PAYMENTS_BALANCE) + 1;
+
+  const stages = [];
+  for (let c = totalCol + 1; c < balanceCol; c += 1) {
+    if (labels[c - 1]) stages.push({ col: c, label: labels[c - 1] });
+  }
+
+  let dueCol = 0;
+  for (let i = 0; i < PAYMENTS_DUE.length && !dueCol; i += 1) {
+    const at = header.indexOf(PAYMENTS_DUE[i]);
+    if (at >= 0) dueCol = at + 1;
+  }
+
+  return {
+    sheet: sheet,
+    width: width,
+    headerRow: headerRow,
+    vendorCol: header.indexOf(PAYMENTS_HEADER) + 1,
+    totalCol: totalCol,
+    balanceCol: balanceCol,
+    notesCol: header.indexOf('NOTES') + 1,
+    paxCol: header.indexOf('# OF PAX') + 1,
+    dueCol: dueCol,
+    stages: stages,
+  };
+}
+
+/** Row number of the grand total, which marks the end of the vendor table. */
+function grandTotalRow_(L) {
+  const first = L.headerRow + 1;
+  const last = L.sheet.getLastRow();
+  if (last < first) return 0;
+  const names = L.sheet.getRange(first, L.vendorCol, last - first + 1, 1).getDisplayValues();
+  for (let i = 0; i < names.length; i += 1) {
+    if (PAYMENTS_GRAND.test(String(names[i][0] || '').trim())) return first + i;
+  }
+  return 0;
+}
+
+/**
+ * Adds a vendor to the end of the table.
+ *
+ * Placed one row above the last existing vendor rather than directly after it:
+ * a grand total written as SUM over the vendor rows only grows when a row is
+ * inserted inside that range, and appending below it would leave the new
+ * vendor out of the sheet's own total. The reply reports whether the total
+ * actually moved, so a formula that needs widening doesn't pass unnoticed.
+ */
+function addVendor_(body) {
+  const fields = body.fields || {};
+  const vendor = String(fields.vendor == null ? '' : fields.vendor).trim();
+  if (!vendor) return { ok: false, error: 'A vendor name is required.' };
+
+  const L = paymentsLayout_();
+  const grandRow = grandTotalRow_(L);
+  const firstData = L.headerRow + 1;
+
+  // Last vendor row above the grand total, skipping trailing blanks.
+  let lastVendor = (grandRow ? grandRow : L.sheet.getLastRow() + 1) - 1;
+  while (lastVendor >= firstData && !String(L.sheet.getRange(lastVendor, L.vendorCol).getDisplayValue() || '').trim()) {
+    lastVendor -= 1;
+  }
+  if (lastVendor < firstData) return { ok: false, error: 'The vendor table appears to be empty.' };
+
+  const totalBefore = grandRow ? Number(L.sheet.getRange(grandRow, L.totalCol).getValue()) || 0 : null;
+
+  L.sheet.insertRowBefore(lastVendor);
+  const target = lastVendor;
+  // Inherit formatting and the FINAL PAYMENT formula from the row below.
+  L.sheet.getRange(target + 1, 1, 1, L.width).copyTo(L.sheet.getRange(target, 1, 1, L.width));
+
+  const clear = [L.vendorCol, L.totalCol, L.notesCol, L.paxCol, L.dueCol]
+    .concat(L.stages.map(function (s) { return s.col; }))
+    .filter(Boolean);
+  clear.forEach(function (col) { L.sheet.getRange(target, col).clearContent(); });
+
+  L.sheet.getRange(target, L.vendorCol).setValue(vendor);
+  if (L.totalCol && fields.total != null && fields.total !== '') {
+    L.sheet.getRange(target, L.totalCol).setValue(Number(fields.total));
+  }
+  const stageValues = fields.stages || {};
+  L.stages.forEach(function (stage) {
+    const v = stageValues[stage.label];
+    if (v != null && v !== '') L.sheet.getRange(target, stage.col).setValue(Number(v));
+  });
+  if (L.notesCol && fields.notes) L.sheet.getRange(target, L.notesCol).setValue(String(fields.notes));
+  if (L.paxCol && fields.pax) L.sheet.getRange(target, L.paxCol).setValue(fields.pax);
+  if (L.dueCol && fields.due) L.sheet.getRange(target, L.dueCol).setValue(new Date(String(fields.due) + 'T00:00:00'));
+
+  SpreadsheetApp.flush();
+
+  let countedInTotal = null;
+  if (grandRow) {
+    const movedTo = grandTotalRow_(paymentsLayout_());
+    const totalAfter = Number(L.sheet.getRange(movedTo, L.totalCol).getValue()) || 0;
+    const added = Number(fields.total) || 0;
+    countedInTotal = Math.abs(totalAfter - totalBefore - added) < 0.005;
+  }
+
+  return { ok: true, row: target, countedInTotal: countedInTotal };
 }

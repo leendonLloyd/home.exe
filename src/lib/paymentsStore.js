@@ -99,5 +99,33 @@ export const usePaymentsStore = () => {
     }
   }, [url, refresh]);
 
-  return { url, data, loading, busy, error, refresh, excluded, toggleExcluded, totals, recordPayment, dismissError: () => setError(null) };
+  const addVendor = useCallback(async (fields) => {
+    if (!url) return false;
+    setBusy(true);
+    try {
+      const payload = await sendAction(url, { action: 'payments.add', fields });
+      const next = {
+        rows: payload.rows ?? [],
+        stageLabels: payload.stageLabels ?? [],
+        hasDueDates: Boolean(payload.hasDueDates),
+        fetchedAt: payload.fetchedAt ?? new Date().toISOString(),
+      };
+      setData(next);
+      writeJson(CACHE_KEY, next);
+      // The sheet's own total is the headline, so a formula that did not widen
+      // to cover the new row would quietly under-report from here on.
+      setError(payload.countedInTotal === false
+        ? 'Added, but the sheet\'s TOTAL AMOUNT did not change — widen its formula to cover the new row.'
+        : null);
+      return true;
+    } catch (err) {
+      setError(err.message);
+      if (err.stale) refresh();
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }, [url, refresh]);
+
+  return { url, data, loading, busy, error, refresh, excluded, toggleExcluded, totals, recordPayment, addVendor, dismissError: () => setError(null) };
 };

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import AddVendorSheet from '../components/AddVendorSheet';
 import DueBanner from '../components/DueBanner';
 import PaymentRow from '../components/PaymentRow';
 import PaymentSheet from '../components/PaymentSheet';
@@ -17,6 +18,7 @@ export default function Payments() {
   const store = usePaymentsStore();
   const [filter, setFilter] = useState('due');
   const [detail, setDetail] = useState(null);
+  const [adding, setAdding] = useState(false);
   // Fixed per visit so "due in N days" cannot shift while you are reading it.
   const [today] = useState(() => new Date());
 
@@ -143,6 +145,21 @@ export default function Payments() {
           </p>
         ) : null}
       </main>
+
+      <nav className="tab-bar">
+        <button type="button" className="btn primary" disabled={store.busy} onClick={() => setAdding(true)}>
+          + Vendor
+        </button>
+      </nav>
+
+      <AddVendorSheet
+        open={adding}
+        stageLabels={store.data.stageLabels}
+        hasDueDates={store.data.hasDueDates}
+        busy={store.busy}
+        onClose={() => setAdding(false)}
+        onSave={store.addVendor}
+      />
 
       <PaymentSheet
         open={Boolean(detail)}

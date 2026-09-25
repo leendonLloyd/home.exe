@@ -46,9 +46,9 @@ function doPost(e) {
     const action = String(body.action || '');
 
     // Namespaced actions answer with their own feature's fresh state.
-    if (action === 'payments.pay') {
-      const paid = payVendor_(body);
-      return json_(paid.ok ? { ...paid, ...readPayments_() } : paid);
+    if (action === 'payments.pay' || action === 'payments.add') {
+      const done = action === 'payments.pay' ? payVendor_(body) : addVendor_(body);
+      return json_(done.ok ? { ...done, ...readPayments_() } : done);
     }
 
     // Unprefixed actions belong to the to-do list, which shipped before
