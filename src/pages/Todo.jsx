@@ -68,7 +68,7 @@ export default function Todo() {
 
         <TodoSetupSheet
           open={sheet === 'setup'}
-          current={store.url}
+          current={store.override}
           build={build}
           onClose={() => setSheet(null)}
           onConnect={store.connect}
@@ -202,7 +202,7 @@ export default function Todo() {
 
       <TodoSetupSheet
         open={sheet === 'setup'}
-        current={store.url}
+        current={store.override}
         build={build}
         onClose={() => setSheet(null)}
         onConnect={store.connect}

@@ -7,10 +7,23 @@
 //     it automatically and the final response carries the CORS header, so a
 //     plain fetch works — but only if the deployment is open to "Anyone".
 
+import { DEFAULT_EXEC_URL } from './sheetConfig';
+
 const URL_KEY = 'home.exe:todo:url';
 const CACHE_KEY = 'home.exe:todo:cache:v1';
 
+// A stored URL is an override for testing a new deployment before committing
+// it; with none, the app falls back to the one built into the bundle.
 export const readUrl = () => {
+  try {
+    return window.localStorage.getItem(URL_KEY) || DEFAULT_EXEC_URL;
+  } catch {
+    return DEFAULT_EXEC_URL;
+  }
+};
+
+/** The override only, so the setup sheet can tell "set here" from "built in". */
+export const readOverride = () => {
   try {
     return window.localStorage.getItem(URL_KEY) || '';
   } catch {

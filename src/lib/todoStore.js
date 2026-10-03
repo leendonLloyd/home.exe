@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchTasks, readCache, readUrl, sendAction, writeCache, writeUrl } from './todoApi';
+import { DEFAULT_EXEC_URL } from './sheetConfig';
+import { fetchTasks, readCache, readOverride, readUrl, sendAction, writeCache, writeUrl } from './todoApi';
 
 const EMPTY = { tasks: [], summary: {}, priorityOptions: [], fetchedAt: null, build: null };
 
 export const useTodoStore = () => {
   const [url, setUrl] = useState(readUrl);
+  // Tracked separately so the setup sheet can show whether this device is
+  // pointed somewhere other than the URL built into the app.
+  const [override, setOverride] = useState(readOverride);
   // Paint the last known list immediately; the network refresh lands after.
   const [data, setData] = useState(() => readCache() ?? EMPTY);
   const [loading, setLoading] = useState(false);
@@ -46,14 +50,18 @@ export const useTodoStore = () => {
 
   const connect = useCallback((next) => {
     const trimmed = next.trim();
-    writeUrl(trimmed);
-    setUrl(trimmed);
+    // Pointing at the built-in URL is the same as having no override at all.
+    const stored = trimmed === DEFAULT_EXEC_URL ? '' : trimmed;
+    writeUrl(stored);
+    setOverride(stored);
+    setUrl(trimmed || DEFAULT_EXEC_URL);
     setError(null);
   }, []);
 
   const disconnect = useCallback(() => {
     writeUrl('');
-    setUrl('');
+    setOverride('');
+    setUrl(DEFAULT_EXEC_URL);
     setData(EMPTY);
     writeCache(EMPTY);
   }, []);
@@ -101,6 +109,7 @@ export const useTodoStore = () => {
 
   return {
     url,
+    override,
     data,
     loading,
     busy,
