@@ -3,31 +3,44 @@
 Laundry, Workout and Bills move here; To Do, Payments and Guests stay on the
 planner sheet, because those are a spreadsheet two people already edit directly.
 
-## What Claude needs from you
+## Console checklist
 
-1. **The web config.** Firebase console → Project settings → General → Your apps
-   → Web app (create one if there isn't one) → the `firebaseConfig` object.
+All of this is in the Firebase console, in this order.
 
-   It is safe to paste and safe to commit. Unlike the Apps Script `/exec` URL,
-   a Firebase web config is public by design — `firestore.rules` is what gates
-   access, not secrecy of the key.
+**1. Create the database.** Build → Firestore Database → Create database →
+**Production mode** → location **asia-southeast1 (Singapore)**, the closest
+region.
 
-2. **Both Gmail addresses**, to go in the rules below.
+> The location is permanent. Everything else here can be changed later; this
+> cannot, short of making a new project.
 
-3. **Confirmation that Google sign-in is on**: Build → Authentication → Sign-in
-   method → Google → Enable.
+**2. Turn on Google sign-in.** Build → Authentication → Get started → Sign-in
+method → Google → Enable. It asks for a project support email — your own
+address is fine → Save.
 
-## Before anything will work
+**3. Allow the deployed site to sign in.** Authentication → Settings →
+Authorized domains → Add domain → `leendonlloyd.github.io`.
 
-Firestore created in production mode denies everything by default, so the rules
-must be published first.
+> Easy to miss, and nothing hints at it: sign-in works on `localhost`, which is
+> authorised by default, then fails only on the real site with
+> `auth/unauthorized-domain`.
 
-1. Put the two addresses into `household()` in [`firestore.rules`](firestore.rules).
-2. Firebase console → Build → Firestore Database → Rules → paste → **Publish**.
+**4. Register a web app.** Project settings → General → Your apps → the `</>`
+icon → any nickname → Register app. Copy the `firebaseConfig` block it shows.
+Skip the SDK snippets it offers; that part is handled here.
 
-Without this, a correctly configured app still reads and writes nothing, and
-the errors say "Missing or insufficient permissions" rather than anything about
-the rules not being published.
+**5. Publish the rules.** Put both Google addresses into `household()` in
+[`firestore.rules`](firestore.rules), then Firestore Database → Rules → paste
+the whole file → **Publish**.
+
+> Production mode denies everything until this is done. Skipping it leaves a
+> correctly built app failing with "Missing or insufficient permissions" and
+> nothing pointing at the cause.
+
+**6. Send Claude** the `firebaseConfig` block and both Gmail addresses.
+
+The config is safe to paste and safe to commit — a Firebase web config is
+public by design, and the rules above are what actually gate access.
 
 ## Shape of the data
 
