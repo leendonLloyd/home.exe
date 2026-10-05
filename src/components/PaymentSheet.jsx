@@ -3,16 +3,23 @@ import { money } from '../lib/money';
 import { instalmentsOf, paidOf } from '../lib/paymentTotals';
 import Sheet from './Sheet';
 
-export default function PaymentSheet({ open, row, excluded, busy, hasDueDates, onClose, onToggleExcluded, onRecordPayment, onSetDueDate }) {
+export default function PaymentSheet({ open, row, excluded, busy, hasDueDates, onClose, onToggleExcluded, onRecordPayment, onSetDueDate, onEditAmounts }) {
   const [paying, setPaying] = useState(false);
   const [amount, setAmount] = useState('');
   const [dueEdit, setDueEdit] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [amounts, setAmounts] = useState({ total: '', stages: {} });
 
   useEffect(() => {
     if (!open) return;
     setPaying(false);
     setAmount(row && row.balance != null ? String(row.balance) : '');
     setDueEdit(null);
+    setEditing(false);
+    setAmounts({
+      total: row && row.total != null ? String(row.total) : '',
+      stages: Object.fromEntries((row?.stages ?? []).map((stage) => [stage.label, stage.amount == null ? '' : String(stage.amount)])),
+    });
   }, [open, row]);
 
   if (!row) return null;
@@ -31,26 +38,90 @@ export default function PaymentSheet({ open, row, excluded, busy, hasDueDates, o
 
   return (
     <Sheet open={open} title={row.vendor} onClose={onClose}>
-      <ul className="stack-list compact">
-        <li>
-          <span>Package</span>
-          <strong>{money(row.total)}</strong>
-        </li>
-        {stages.map((stage) => (
-          <li key={stage.label}>
-            <span className="muted">{stage.label}</span>
-            <strong>{money(stage.amount)}</strong>
-          </li>
-        ))}
-        <li>
-          <span>Paid so far</span>
-          <strong>{money(paid)}</strong>
-        </li>
-        <li>
-          <span>Balance</span>
-          <strong className={row.balance ? 'warm' : 'up'}>{money(row.balance)}</strong>
-        </li>
-      </ul>
+      {editing ? (
+        <>
+          <label className="field-label" htmlFor="amt-total">
+            Total package
+          </label>
+          <input
+            id="amt-total"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            value={amounts.total}
+            placeholder="—"
+            onChange={(event) => setAmounts((prev) => ({ ...prev, total: event.target.value }))}
+          />
+
+          {/* There is no "paid so far" column — the sheet derives it from
+              these, so these are what there is to correct. */}
+          <label className="field-label">Instalments paid</label>
+          {(row.stages ?? []).map((stage) => (
+            <div key={stage.label} className="amt-row">
+              <span className="muted small">{stage.label}</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                aria-label={stage.label}
+                value={amounts.stages[stage.label] ?? ''}
+                placeholder="—"
+                onChange={(event) =>
+                  setAmounts((prev) => ({ ...prev, stages: { ...prev.stages, [stage.label]: event.target.value } }))
+                }
+              />
+            </div>
+          ))}
+
+          <p className="muted small">
+            Leaving one blank clears it, which reads as not yet paid — a 0 would read as paid nothing. The sheet works
+            the balance out from these; nothing writes to FINAL PAYMENT.
+          </p>
+
+          <div className="row-form">
+            <button type="button" className="btn block" onClick={() => setEditing(false)}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn primary block"
+              disabled={busy}
+              onClick={() => {
+                onEditAmounts(row, { total: amounts.total, stages: amounts.stages });
+                setEditing(false);
+              }}
+            >
+              {busy ? 'Saving…' : 'Save amounts'}
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <ul className="stack-list compact">
+            <li>
+              <span>Package</span>
+              <strong>{money(row.total)}</strong>
+            </li>
+            {stages.map((stage) => (
+              <li key={stage.label}>
+                <span className="muted">{stage.label}</span>
+                <strong>{money(stage.amount)}</strong>
+              </li>
+            ))}
+            <li>
+              <span>Paid so far</span>
+              <strong>{money(paid)}</strong>
+            </li>
+            <li>
+              <span>Balance</span>
+              <strong className={row.balance ? 'warm' : 'up'}>{money(row.balance)}</strong>
+            </li>
+          </ul>
+          <button type="button" className="btn block" disabled={busy} onClick={() => setEditing(true)}>
+            Edit amounts
+          </button>
+        </>
+      )}
 
       {stages.length === 0 ? <p className="muted small">No instalments recorded here.</p> : null}
       {unrecorded ? (

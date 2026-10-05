@@ -1388,3 +1388,13 @@ table.log .sum {
 .grocery-foot .stepper {
   flex: 1;
 }
+
+.amt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.amt-row > span {
+  flex: 0 0 38%;
+}

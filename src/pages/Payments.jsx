@@ -170,6 +170,7 @@ export default function Payments() {
         hasDueDates={store.data.hasDueDates}
         onRecordPayment={store.recordPayment}
         onSetDueDate={store.setDueDate}
+        onEditAmounts={store.editAmounts}
         onToggleExcluded={(vendor) => {
           store.toggleExcluded(vendor);
           setDetail(null);

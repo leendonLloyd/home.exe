@@ -168,9 +168,14 @@ function payVendor_(body) {
 }
 
 /**
- * Edits the columns that are plain data — the due date and the note. Amounts
- * are not editable here: a package or an instalment changes what is owed, and
- * those go through the payment path or the sheet itself.
+ * Edits a vendor's row in place: due date, note, package, and the instalment
+ * columns themselves.
+ *
+ * Instalments rather than a "paid so far" figure, because there is no such
+ * column — FINAL PAYMENT derives the balance from the instalments, so they are
+ * what determines how much is paid. Only the ones actually sent are touched,
+ * so correcting one does not blank the rest, and FINAL PAYMENT is never
+ * written: the sheet keeps working the balance out.
  */
 function updateVendor_(body) {
   const row = Number(body.row);
@@ -193,6 +198,31 @@ function updateVendor_(body) {
 
   if (Object.prototype.hasOwnProperty.call(fields, 'notes') && L.notesCol) {
     L.sheet.getRange(row, L.notesCol).setValue(String(fields.notes == null ? '' : fields.notes));
+  }
+
+  // An empty value clears the cell rather than writing 0: a blank instalment
+  // means "not paid yet", where a 0 reads as "paid nothing" and is believed.
+  const money = function (col, value) {
+    const cell = L.sheet.getRange(row, col);
+    if (value === '' || value == null) cell.clearContent();
+    else {
+      const n = Number(value);
+      if (isNaN(n)) throw new Error('"' + value + '" is not a number.');
+      cell.setValue(n);
+    }
+  };
+
+  if (Object.prototype.hasOwnProperty.call(fields, 'total')) {
+    if (!L.totalCol) return { ok: false, error: 'This tab has no ' + PAYMENTS_TOTAL + ' column.' };
+    money(L.totalCol, fields.total);
+  }
+
+  if (fields.stages) {
+    for (var i = 0; i < L.stages.length; i += 1) {
+      var stage = L.stages[i];
+      if (!Object.prototype.hasOwnProperty.call(fields.stages, stage.label)) continue;
+      money(stage.col, fields.stages[stage.label]);
+    }
   }
 
   SpreadsheetApp.flush();

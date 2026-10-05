@@ -111,6 +111,28 @@ export const usePaymentsStore = () => {
     }
   }, [url, refresh, accept]);
 
+  /** Package and instalments. Only what is passed is written. */
+  const editAmounts = useCallback(async (row, fields) => {
+    if (!url) return false;
+    setBusy(true);
+    try {
+      accept(await sendAction(url, {
+        action: 'payments.update',
+        row: row.row,
+        expectVendor: row.vendor,
+        fields,
+      }));
+      setError(null);
+      return true;
+    } catch (err) {
+      setError(err.message);
+      if (err.stale) refresh();
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }, [url, refresh, accept]);
+
   const setDueDate = useCallback(async (row, due) => {
     if (!url) return false;
     setBusy(true);
@@ -132,5 +154,5 @@ export const usePaymentsStore = () => {
     }
   }, [url, refresh, accept]);
 
-  return { url, data, loading, busy, error, refresh, excluded, toggleExcluded, totals, recordPayment, addVendor, setDueDate, dismissError: () => setError(null) };
+  return { url, data, loading, busy, error, refresh, excluded, toggleExcluded, totals, recordPayment, addVendor, setDueDate, editAmounts, dismissError: () => setError(null) };
 };

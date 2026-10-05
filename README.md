@@ -111,7 +111,13 @@ the entered amount leaves outstanding before it is committed. Either way the
 amount goes into the first empty instalment column — the ones `FINAL PAYMENT`
 subtracts from — so the sheet works the new balance out itself.
 
-**Editing a vendor** covers the due date only. Amounts are not editable there:
+**Editing a vendor** covers the due date, the total package and the instalment
+columns. There is no "paid so far" field to edit because there is no such
+column — `FINAL PAYMENT` derives the balance from the instalments, so those are
+what determines it, and correcting one leaves the rest alone. Clearing an
+instalment is not the same as entering `0`: blank means not yet paid, `0` means
+paid nothing, and the app keeps the distinction. `FINAL PAYMENT` is never
+written. Amounts are not editable there:
 a package or an instalment changes what is owed, and those go through the
 payment path or the sheet itself. Clearing the field removes the date.
 
