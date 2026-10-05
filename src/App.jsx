@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import RouteBoundary from './components/RouteBoundary';
 import Hub from './pages/Hub';
 import Payments from './pages/Payments';
 import Todo from './pages/Todo';
@@ -34,20 +35,24 @@ const cloud = (title, element) => (
 export default function App() {
   return (
     <HashRouter>
-      <Routes>
-        <Route path="/" element={<Hub />} />
-        <Route path="/laundry" element={cloud('Laundry', <Laundry />)} />
-        <Route path="/laundry/summary" element={cloud('Laundry', <LaundrySummary />)} />
-        <Route path="/laundry/check/:sessionId" element={cloud('Laundry', <LaundryCheck />)} />
-        <Route path="/bills" element={cloud('Bills', <Bills />)} />
-        <Route path="/grocery" element={cloud('Groceries', <Grocery />)} />
-        <Route path="/todo" element={<Todo />} />
-        <Route path="/payments" element={<Payments />} />
-        <Route path="/workout" element={cloud('Workout', <Workout />)} />
-        <Route path="/workout/log" element={cloud('Workout', <WorkoutLog />)} />
-        <Route path="/workout/notes" element={cloud('Workout', <WorkoutNotes />)} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      {/* Catches both a failed chunk and any render error, either of which
+          would otherwise leave a blank page with nothing to act on. */}
+      <RouteBoundary>
+        <Routes>
+          <Route path="/" element={<Hub />} />
+          <Route path="/laundry" element={cloud('Laundry', <Laundry />)} />
+          <Route path="/laundry/summary" element={cloud('Laundry', <LaundrySummary />)} />
+          <Route path="/laundry/check/:sessionId" element={cloud('Laundry', <LaundryCheck />)} />
+          <Route path="/bills" element={cloud('Bills', <Bills />)} />
+          <Route path="/grocery" element={cloud('Groceries', <Grocery />)} />
+          <Route path="/todo" element={<Todo />} />
+          <Route path="/payments" element={<Payments />} />
+          <Route path="/workout" element={cloud('Workout', <Workout />)} />
+          <Route path="/workout/log" element={cloud('Workout', <WorkoutLog />)} />
+          <Route path="/workout/notes" element={cloud('Workout', <WorkoutNotes />)} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </RouteBoundary>
     </HashRouter>
   );
 }
