@@ -1,16 +1,13 @@
-// The deployed Apps Script the app talks to.
+// The deployed Apps Script the To Do and Payments screens talk to.
 //
-// Committed on purpose: redeploys happen from the laptop, and phones should
-// just work rather than needing the URL pasted again each time.
+// Supplied at build time from the VITE_SHEET_EXEC_URL repository variable, and
+// from .env.local when running locally — so a phone is set up without anyone
+// pasting anything, and a redeploy from the laptop doesn't change that.
 //
-// Be aware of what that means. The deployment is open to "Anyone", so this URL
-// is the only thing protecting the planner sheet — and the built bundle is
-// served publicly from GitHub Pages, so it is readable by anyone who opens the
-// deployed site regardless of where it is kept. Anyone holding it can read and
-// edit the to-do list, the payments tab and the guest list, and submit RSVPs.
-//
-// If it ever needs revoking: Apps Script → Deploy → Manage deployments →
-// Archive, create a new deployment, and change the line below. The old URL dies
-// with the old deployment.
-export const DEFAULT_EXEC_URL =
-  'https://script.google.com/macros/s/AKfycbzrRh_kImEDxG7aLh30_rhhCgeivNGO4_uNUit16t6JQbcmvn809JIDOapVq9LGcQrt3g/exec';
+// Unlike the Firebase config this one really is a credential: the deployment is
+// open to "Anyone", so holding the URL means being able to read and edit the
+// planner sheet. Keeping it out of the source does not hide it — Vite inlines
+// it and GitHub Pages serves that bundle publicly — so the way to revoke it is
+// Apps Script → Deploy → Manage deployments → Archive, then deploy again and
+// update the variable. The old URL dies with the old deployment.
+export const DEFAULT_EXEC_URL = import.meta.env.VITE_SHEET_EXEC_URL || '';

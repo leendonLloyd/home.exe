@@ -58,8 +58,8 @@ export default function Todo() {
 
         <main className="scroll">
           <div className="flag">
-            <strong>Connect the planner sheet.</strong> Deploy the Apps Script in <code>apps-script/</code> as a Web app,
-            then paste its <code>/exec</code> URL. It stays on this device.
+            <strong>This build shipped without a sheet URL.</strong> Set <code>VITE_SHEET_EXEC_URL</code> as a
+            repository variable and redeploy, or paste a <code>/exec</code> URL here to use one on this device only.
           </div>
           <button type="button" className="btn primary block" onClick={() => setSheet('setup')}>
             Connect

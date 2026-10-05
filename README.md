@@ -61,14 +61,15 @@ only. `DAYS LEFT` and the four summary tiles are formulas: read, never written.
 
 Two things worth knowing:
 
-- **The `/exec` URL is committed**, in `src/lib/sheetConfig.js`, so a phone works
-  without being set up and a redeploy doesn't mean re-pasting it everywhere.
+- **The `/exec` URL comes from the `VITE_SHEET_EXEC_URL` repository variable**,
+  so a phone works without being set up and a redeploy doesn't mean re-pasting
+  it everywhere.
   That URL is the only thing protecting the sheet: the deployment is open to
   anyone with the link, so anyone holding it can read and edit the to-do list,
   the payments tab and the guest list. Note the bundle is served publicly from
   GitHub Pages either way, so keeping it out of the repo would not have hidden
   it from anyone looking at the deployed site. To revoke, archive the deployment
-  and change that constant. **To Do → Sheet** can still point one device at a
+  and update the variable. **To Do → Sheet** can still point one device at a
   different deployment, which is how to try one before committing it.
 - **Writes can be refused on purpose.** Row numbers shift if someone edits the
   sheet directly while the app is open, so every write names the item it expects in
