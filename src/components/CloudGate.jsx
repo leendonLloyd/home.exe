@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { MISSING_CONFIG } from '../lib/firebase';
 import { useAuth } from '../lib/useAuth';
 
 /**
@@ -7,6 +8,29 @@ import { useAuth } from '../lib/useAuth';
  */
 export default function CloudGate({ title, children }) {
   const { user, checking, error, signIn, dismissError } = useAuth();
+
+  if (MISSING_CONFIG.length) {
+    return (
+      <div className="screen">
+        <header className="app-bar">
+          <Link to="/" className="icon-btn" aria-label="Back to hub">
+            ←
+          </Link>
+          <div>
+            <h1>{title}</h1>
+            <p className="muted">Not configured</p>
+          </div>
+        </header>
+        <main className="scroll">
+          <div className="flag warn">
+            <strong>This build has no Firebase config.</strong> {MISSING_CONFIG.join(', ')}{' '}
+            {MISSING_CONFIG.length === 1 ? 'was' : 'were'} missing when it was built. Set them as repository variables
+            under Settings → Secrets and variables → Actions, then re-run the deploy.
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (checking) {
     return (

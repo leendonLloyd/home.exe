@@ -37,10 +37,16 @@ the whole file → **Publish**.
 > correctly built app failing with "Missing or insufficient permissions" and
 > nothing pointing at the cause.
 
-**6. Send Claude** the `firebaseConfig` block and both Gmail addresses.
+**6. Set the config as repository variables.** GitHub → Settings → Secrets and
+variables → Actions → **Variables** tab → New repository variable, one per line
+in [`.env.example`](../.env.example). The deploy workflow passes them to the
+build; locally, copy that file to `.env.local` and fill it in.
 
-The config is safe to paste and safe to commit — a Firebase web config is
-public by design, and the rules above are what actually gate access.
+Variables rather than secrets on purpose: a Firebase web config is public by
+design, Vite inlines it into the bundle, and GitHub Pages serves that bundle
+publicly — so the values are readable from the deployed site whatever is done
+with them. Keeping them out of the repo is config hygiene, not secrecy. The
+rules are what gate the data.
 
 ## Shape of the data
 
