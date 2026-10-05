@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { deleteDoc, increment, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { docRef, useCloudDocs } from './cloudDocs';
-import { OWNER_COLORS } from './defaults';
+import { DEFAULT_STATE, OWNER_COLORS } from './defaults';
 import { db } from './firebase';
 
 // One collection holds everything laundry: a `config` doc for owners and items,
@@ -120,6 +120,16 @@ export const useLaundryStore = () => {
   const reopenCheck = useCallback((sessionId) =>
     updateDoc(ref(BULK + sessionId), { closedAt: null }).catch(report), []);
 
+  /**
+   * Writes the starting owners and clothing types.
+   *
+   * Offered rather than written on first load: two phones opening a fresh
+   * household would both seed it, and seeding after someone has imported their
+   * own data would leave the defaults sitting among it.
+   */
+  const seedDefaults = useCallback(() =>
+    setDoc(ref('config'), { owners: DEFAULT_STATE.owners, items: DEFAULT_STATE.items }).catch(report), [report]);
+
   const exportState = useCallback(() => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -158,6 +168,6 @@ export const useLaundryStore = () => {
     dismissError: () => setError(null),
     addOwner, deleteOwner, saveItem, deleteItem, bumpCount, resetCounts,
     saveSession, deleteSession, bumpReturn, resetReturns, closeCheck, reopenCheck,
-    exportState, importState, replaceAll,
+    seedDefaults, exportState, importState, replaceAll,
   };
 };

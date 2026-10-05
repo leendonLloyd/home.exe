@@ -66,6 +66,9 @@ households/home/grocery/item-<id>   the standing list
 households/home/grocery/cart        one field per item, how many are wanted
 households/home/grocery/got         what is already in the trolley
 households/home/grocery/trip-<id>   one per finished shop
+
+households/home/workout/current     chosen plan and today's part-done sets
+households/home/workout/entry-<id>  one per exercise of a finished session
 ```
 
 `counts` and `cart` are single documents with a field per item so a tap sends
@@ -76,7 +79,9 @@ to the same list at once.
 Everything else is a document per record, so two phones editing different bills
 or different items never touch the same one.
 
-Workout is not moved yet and still reads from localStorage.
+Workout's seeded history stays in `workoutHistory.js` rather than Firestore —
+it is a transcription of a paper log, so editing the file is how it gets
+corrected. Logged sessions layer on top, numbered on from where the seed ends.
 
 ## Migrating what is already there
 

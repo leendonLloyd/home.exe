@@ -1,8 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import DeviceImportSheet from '../components/DeviceImportSheet';
 import Sheet from '../components/Sheet';
 import { PARTS, STANDING } from '../lib/workoutHistory';
-import { useWorkoutStore } from '../lib/workoutStore';
+import { useWorkoutStore } from '../lib/workoutCloud';
 
 export default function WorkoutLog() {
   const store = useWorkoutStore();
@@ -129,6 +130,9 @@ export default function WorkoutLog() {
       </main>
 
       <nav className="tab-bar">
+        <button type="button" className="btn" onClick={() => setSheet('device')}>
+          Import this device
+        </button>
         <button type="button" className="btn" onClick={store.exportState}>
           Export JSON
         </button>
@@ -147,6 +151,18 @@ export default function WorkoutLog() {
           }}
         />
       </nav>
+
+      <DeviceImportSheet
+        open={sheet === 'device'}
+        storageKey="home.exe:workout:v1"
+        cloudState={store.state}
+        counts={(data) => [
+          { label: 'Logged exercises', value: data.entries?.length ?? 0 },
+          { label: 'Sets in progress', value: Object.keys(data.sets ?? {}).length },
+        ]}
+        onClose={() => setSheet(null)}
+        onImport={store.replaceAll}
+      />
 
       <Sheet open={sheet === 'sessions'} title="Sessions completed" onClose={() => setSheet(null)}>
         <ul className="stack-list">

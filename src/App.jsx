@@ -3,9 +3,6 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Hub from './pages/Hub';
 import Payments from './pages/Payments';
 import Todo from './pages/Todo';
-import Workout from './pages/Workout';
-import WorkoutLog from './pages/WorkoutLog';
-import WorkoutNotes from './pages/WorkoutNotes';
 
 // Laundry is the only part that talks to Firestore, and the SDK is roughly
 // twice the weight of everything else here put together. Loading it on demand
@@ -13,6 +10,9 @@ import WorkoutNotes from './pages/WorkoutNotes';
 const Bills = lazy(() => import('./pages/Bills'));
 const CloudGate = lazy(() => import('./components/CloudGate'));
 const Grocery = lazy(() => import('./pages/Grocery'));
+const Workout = lazy(() => import('./pages/Workout'));
+const WorkoutLog = lazy(() => import('./pages/WorkoutLog'));
+const WorkoutNotes = lazy(() => import('./pages/WorkoutNotes'));
 const Laundry = lazy(() => import('./pages/Laundry'));
 const LaundryCheck = lazy(() => import('./pages/LaundryCheck'));
 const LaundrySummary = lazy(() => import('./pages/LaundrySummary'));
@@ -43,9 +43,9 @@ export default function App() {
         <Route path="/grocery" element={cloud('Groceries', <Grocery />)} />
         <Route path="/todo" element={<Todo />} />
         <Route path="/payments" element={<Payments />} />
-        <Route path="/workout" element={<Workout />} />
-        <Route path="/workout/log" element={<WorkoutLog />} />
-        <Route path="/workout/notes" element={<WorkoutNotes />} />
+        <Route path="/workout" element={cloud('Workout', <Workout />)} />
+        <Route path="/workout/log" element={cloud('Workout', <WorkoutLog />)} />
+        <Route path="/workout/notes" element={cloud('Workout', <WorkoutNotes />)} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </HashRouter>

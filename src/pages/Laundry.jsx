@@ -171,7 +171,21 @@ export default function Laundry() {
           </section>
         ))}
 
-        {sections.length === 0 ? <p className="empty">No clothing types yet. Add one below.</p> : null}
+        {store.ready && items.length === 0 ? (
+          <>
+            <p className="empty">Nothing here yet.</p>
+            <button type="button" className="btn block" onClick={store.seedDefaults}>
+              Start with the usual owners and clothing types
+            </button>
+            <p className="muted small">
+              Or bring across what this phone saved before syncing — History → Import this device.
+            </p>
+          </>
+        ) : null}
+
+        {store.ready && items.length > 0 && sections.length === 0 ? (
+          <p className="empty">No clothing types yet. Add one below.</p>
+        ) : null}
 
         {derived.total > 0 ? (
           <button type="button" className="btn ghost block" onClick={store.resetCounts}>

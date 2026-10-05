@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import RirGauge from '../components/RirGauge';
 import SetSheet from '../components/SetSheet';
 import { PLANS, loadLabel, planById } from '../lib/workoutPlans';
-import { useWorkoutStore } from '../lib/workoutStore';
+import { useWorkoutStore } from '../lib/workoutCloud';
 
 const today = () => new Date().toISOString().slice(0, 10);
 

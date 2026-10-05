@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { NOTES } from '../lib/workoutNotes';
 import { PLANS, planById } from '../lib/workoutPlans';
-import { useWorkoutStore } from '../lib/workoutStore';
+import { useWorkoutStore } from '../lib/workoutCloud';
 
 export default function WorkoutNotes() {
   const store = useWorkoutStore();
