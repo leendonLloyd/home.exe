@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BillHistorySheet from '../components/BillHistorySheet';
+import DeviceImportSheet from '../components/DeviceImportSheet';
 import BillRow from '../components/BillRow';
 import BillSheet from '../components/BillSheet';
 import PaySheet from '../components/PaySheet';
 import Sheet from '../components/Sheet';
 import { activeCycle, dueDateOf, periodKey, statusOf } from '../lib/billing';
-import { paymentId, useBillsStore } from '../lib/billsStore';
+import { paymentId, useBillsStore } from '../lib/billsCloud';
 
 export default function Bills() {
   const store = useBillsStore();
@@ -161,6 +162,18 @@ export default function Bills() {
         }}
       />
 
+      <DeviceImportSheet
+        open={sheet === 'device'}
+        storageKey="home.exe:bills:v1"
+        cloudState={store.state}
+        counts={(data) => [
+          { label: 'Bills', value: data.bills?.length ?? 0 },
+          { label: 'Payments logged', value: data.payments?.length ?? 0 },
+        ]}
+        onClose={() => setSheet(null)}
+        onImport={store.replaceAll}
+      />
+
       <BillHistorySheet
         open={sheet === 'history'}
         payments={payments}
@@ -168,6 +181,7 @@ export default function Bills() {
         onDelete={store.deletePayment}
         onExport={store.exportState}
         onImport={store.importState}
+        onDeviceImport={() => setSheet('device')}
       />
     </div>
   );

@@ -235,7 +235,13 @@ export default function Laundry() {
 
       <DeviceImportSheet
         open={sheet === 'device'}
-        cloud={store.state}
+        storageKey="home.exe:laundry:v1"
+        cloudState={store.state}
+        counts={(data) => [
+          { label: 'Owners', value: data.owners?.length ?? 0 },
+          { label: 'Clothing types', value: data.items?.length ?? 0 },
+          { label: 'Saved bulks', value: data.sessions?.length ?? 0 },
+        ]}
         onClose={() => setSheet(null)}
         onImport={store.replaceAll}
       />

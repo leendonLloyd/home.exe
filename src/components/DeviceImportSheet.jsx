@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
 import Sheet from './Sheet';
 
-const LOCAL_KEY = 'home.exe:laundry:v1';
-
-const readLocal = () => {
+const readLocal = (key) => {
   try {
-    const raw = window.localStorage.getItem(LOCAL_KEY);
+    const raw = window.localStorage.getItem(key);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -13,62 +11,61 @@ const readLocal = () => {
 };
 
 /**
- * Moves what this phone saved before the move to Firestore.
+ * Moves what this phone saved before the app moved to Firestore.
  *
  * Deliberately manual, and deliberately a replace. Both phones hold their own
  * copy, so uploading on sign-in would race and merge into duplicates; and a
  * merge of two independent histories has no sensible answer, so the import
  * says plainly that it overwrites and shows what it is about to send.
+ *
+ * `counts` turns each side's state into labelled totals, which is all this
+ * needs to know about the shape of any particular app's data.
  */
-export default function DeviceImportSheet({ open, cloud, onClose, onImport }) {
+export default function DeviceImportSheet({ open, storageKey, counts, cloudState, onClose, onImport }) {
   const [local, setLocal] = useState(null);
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    setLocal(readLocal());
+    setLocal(readLocal(storageKey));
     setConfirming(false);
     setDone(false);
-  }, [open]);
+  }, [open, storageKey]);
 
-  const has = local && (local.items?.length || local.sessions?.length || local.owners?.length);
-  const cloudHas = cloud.items.length + cloud.sessions.length + cloud.owners.length;
+  const localRows = local ? counts(local) : [];
+  const cloudRows = counts(cloudState);
+  const hasLocal = localRows.some((row) => row.value > 0);
+  const hasCloud = cloudRows.some((row) => row.value > 0);
 
   return (
     <Sheet open={open} title="Import this device" onClose={onClose}>
       {done ? (
-        <p className="muted small">Imported. Both phones will show it once they refresh.</p>
-      ) : !has ? (
+        <p className="muted small">Imported. The other phone will show it once it refreshes.</p>
+      ) : !hasLocal ? (
         <p className="muted small">
-          Nothing saved on this device to import — it has no laundry data from before the move to Firestore.
+          Nothing saved on this device to import — it holds no data from before the move to Firestore.
         </p>
       ) : (
         <>
           <p className="muted small">Saved on this device, before syncing:</p>
           <ul className="stack-list compact">
-            <li>
-              <span>Owners</span>
-              <strong>{local.owners?.length ?? 0}</strong>
-            </li>
-            <li>
-              <span>Clothing types</span>
-              <strong>{local.items?.length ?? 0}</strong>
-            </li>
-            <li>
-              <span>Saved bulks</span>
-              <strong>{local.sessions?.length ?? 0}</strong>
-            </li>
+            {localRows.map((row) => (
+              <li key={row.label}>
+                <span>{row.label}</span>
+                <strong>{row.value}</strong>
+              </li>
+            ))}
           </ul>
 
-          {cloudHas > 0 ? (
+          {hasCloud ? (
             <div className="flag warn">
-              <strong>This replaces what is synced.</strong> There are already {cloud.owners.length} owners,{' '}
-              {cloud.items.length} types and {cloud.sessions.length} bulks shared. Importing overwrites all of it —
-              including anything the other phone added.
+              <strong>This replaces what is synced.</strong>{' '}
+              {cloudRows.filter((row) => row.value > 0).map((row) => `${row.value} ${row.label.toLowerCase()}`).join(', ')}{' '}
+              already shared. Importing overwrites all of it — including anything the other phone added.
             </div>
           ) : (
-            <p className="muted small">Nothing is synced yet, so this will be the starting point for both phones.</p>
+            <p className="muted small">Nothing is synced yet, so this becomes the starting point for both phones.</p>
           )}
 
           {confirming ? (

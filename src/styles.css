@@ -1348,3 +1348,43 @@ table.log .sum {
   flex-direction: column;
   gap: 6px;
 }
+
+/* ---------- groceries ---------- */
+
+.item.grocery {
+  gap: 8px;
+  cursor: default;
+  padding: 0;
+  overflow: hidden;
+}
+
+.item.grocery.got {
+  opacity: 0.6;
+}
+
+.item.grocery.got .item-name {
+  text-decoration: line-through;
+}
+
+.grocery-tick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 8px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.grocery-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 8px;
+}
+
+.grocery-foot .stepper {
+  flex: 1;
+}

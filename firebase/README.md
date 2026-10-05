@@ -50,23 +50,33 @@ rules are what gate the data.
 
 ## Shape of the data
 
-Firestore paths alternate collection and document, so everything for one app
-lives in a single collection with named documents inside it:
+Firestore paths alternate collection and document, so each app gets one
+collection under the household document and keeps its data as named documents
+inside it. One listener then covers a whole app.
 
 ```
 households/home/laundry/config      owners and clothing types
 households/home/laundry/counts      one field per item id
-households/home/laundry/bulk-<id>   one document per saved bulk
+households/home/laundry/bulk-<id>   one per saved bulk
+
+households/home/bills/bill-<id>     one per bill
+households/home/bills/pay-<billId>__<period>
+
+households/home/grocery/item-<id>   the standing list
+households/home/grocery/cart        one field per item, how many are wanted
+households/home/grocery/got         what is already in the trolley
+households/home/grocery/trip-<id>   one per finished shop
 ```
 
-`counts` is a single document with a field per item so a tap sends
+`counts` and `cart` are single documents with a field per item so a tap sends
 `increment(1)` rather than rewriting a document the other phone is also
-editing. That is the case localStorage could never get right: two people over
-the same pile, both counting.
+editing. That is the case localStorage could never get right: two people adding
+to the same list at once.
 
-One listener on the `laundry` collection covers the whole app.
+Everything else is a document per record, so two phones editing different bills
+or different items never touch the same one.
 
-Workout and Bills are not moved yet and still read from localStorage.
+Workout is not moved yet and still reads from localStorage.
 
 ## Migrating what is already there
 

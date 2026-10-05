@@ -1,18 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  collection, deleteDoc, doc, increment, onSnapshot, setDoc, updateDoc, writeBatch,
-} from 'firebase/firestore';
+import { useCallback, useMemo } from 'react';
+import { deleteDoc, increment, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { docRef, useCloudDocs } from './cloudDocs';
 import { OWNER_COLORS } from './defaults';
-import { HOUSEHOLD, db } from './firebase';
+import { db } from './firebase';
 
 // One collection holds everything laundry: a `config` doc for owners and items,
 // a `counts` doc whose fields are per-item tallies, and one `bulk-*` doc per
 // saved session. A single listener then covers the whole app, and counts can be
 // bumped with increment() instead of rewriting a document two people are both
 // editing over the same pile of washing.
-const PATH = ['households', HOUSEHOLD, 'laundry'];
-const col = () => collection(db, ...PATH);
-const ref = (id) => doc(db, ...PATH, id);
+const ref = (id) => docRef('laundry', id);
 const BULK = 'bulk-';
 
 const uid = (prefix) => `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -23,23 +20,7 @@ const uid = (prefix) => `${prefix}-${Date.now().toString(36)}${Math.random().toS
 const atLeastZero = (value) => Math.max(0, Number(value) || 0);
 
 export const useLaundryStore = () => {
-  const [docs, setDocs] = useState(null);
-  const [error, setError] = useState(null);
-
-  useEffect(() => onSnapshot(
-    col(),
-    (snap) => {
-      const next = {};
-      snap.forEach((d) => { next[d.id] = d.data(); });
-      setDocs(next);
-      setError(null);
-    },
-    (err) => setError(
-      err.code === 'permission-denied'
-        ? 'Firestore refused the read. Check the rules are published and list this Google account.'
-        : err.message
-    )
-  ), []);
+  const { docs, ready, error, setError, report } = useCloudDocs('laundry');
 
   const state = useMemo(() => {
     const d = docs ?? {};
@@ -58,7 +39,7 @@ export const useLaundryStore = () => {
 
   const writeConfig = useCallback((patch) => {
     const next = { owners: state.owners, items: state.items, ...patch };
-    return setDoc(ref('config'), next, { merge: true }).catch((err) => setError(err.message));
+    return setDoc(ref('config'), next, { merge: true }).catch(report);
   }, [state.owners, state.items]);
 
   const addOwner = useCallback((name) => writeConfig({
@@ -73,7 +54,7 @@ export const useLaundryStore = () => {
     if (dropped.length) {
       batch.set(ref('counts'), Object.fromEntries(dropped.map((id) => [id, 0])), { merge: true });
     }
-    return batch.commit().catch((err) => setError(err.message));
+    return batch.commit().catch(report);
   }, [state.owners, state.items]);
 
   const saveItem = useCallback((draft) => {
@@ -93,15 +74,15 @@ export const useLaundryStore = () => {
     const batch = writeBatch(db);
     batch.set(ref('config'), { items: state.items.filter((i) => i.id !== itemId) }, { merge: true });
     batch.set(ref('counts'), { [itemId]: 0 }, { merge: true });
-    return batch.commit().catch((err) => setError(err.message));
+    return batch.commit().catch(report);
   }, [state.items]);
 
   // The one write that genuinely needs to be conflict-free.
   const bumpCount = useCallback((itemId, delta) =>
-    setDoc(ref('counts'), { [itemId]: increment(delta) }, { merge: true }).catch((err) => setError(err.message)), []);
+    setDoc(ref('counts'), { [itemId]: increment(delta) }, { merge: true }).catch(report), []);
 
   const resetCounts = useCallback(() =>
-    setDoc(ref('counts'), {}).catch((err) => setError(err.message)), []);
+    setDoc(ref('counts'), {}).catch(report), []);
 
   const saveSession = useCallback((date, note) => {
     const lines = state.items
@@ -121,23 +102,23 @@ export const useLaundryStore = () => {
       total: lines.reduce((sum, line) => sum + line.count, 0), lines, returned: {}, closedAt: null,
     });
     batch.set(ref('counts'), {});
-    return batch.commit().catch((err) => setError(err.message));
+    return batch.commit().catch(report);
   }, [state.items, state.counts, state.owners]);
 
   const deleteSession = useCallback((sessionId) =>
-    deleteDoc(ref(BULK + sessionId)).catch((err) => setError(err.message)), []);
+    deleteDoc(ref(BULK + sessionId)).catch(report), []);
 
   const bumpReturn = useCallback((sessionId, itemId, delta) =>
-    updateDoc(ref(BULK + sessionId), { [`returned.${itemId}`]: increment(delta) }).catch((err) => setError(err.message)), []);
+    updateDoc(ref(BULK + sessionId), { [`returned.${itemId}`]: increment(delta) }).catch(report), []);
 
   const resetReturns = useCallback((sessionId) =>
-    updateDoc(ref(BULK + sessionId), { returned: {}, closedAt: null }).catch((err) => setError(err.message)), []);
+    updateDoc(ref(BULK + sessionId), { returned: {}, closedAt: null }).catch(report), []);
 
   const closeCheck = useCallback((sessionId) =>
-    updateDoc(ref(BULK + sessionId), { closedAt: new Date().toISOString() }).catch((err) => setError(err.message)), []);
+    updateDoc(ref(BULK + sessionId), { closedAt: new Date().toISOString() }).catch(report), []);
 
   const reopenCheck = useCallback((sessionId) =>
-    updateDoc(ref(BULK + sessionId), { closedAt: null }).catch((err) => setError(err.message)), []);
+    updateDoc(ref(BULK + sessionId), { closedAt: null }).catch(report), []);
 
   const exportState = useCallback(() => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
@@ -166,13 +147,13 @@ export const useLaundryStore = () => {
     try {
       await replaceAll(JSON.parse(await file.text()));
     } catch (err) {
-      setError(err.message);
+      report(err);
     }
   }, [replaceAll]);
 
   return {
     state,
-    ready: docs !== null,
+    ready,
     error,
     dismissError: () => setError(null),
     addOwner, deleteOwner, saveItem, deleteItem, bumpCount, resetCounts,
