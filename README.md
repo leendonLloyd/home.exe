@@ -106,6 +106,11 @@ column on a row is filled there is nowhere to put it, and the app says so
 rather than overwriting one. Like the to-do list, the write names the vendor it
 expects in that row and backs out if the sheet has moved underneath it.
 
+**Recording a payment** offers paid-in-full or a part payment, and says what
+the entered amount leaves outstanding before it is committed. Either way the
+amount goes into the first empty instalment column — the ones `FINAL PAYMENT`
+subtracts from — so the sheet works the new balance out itself.
+
 **Editing a vendor** covers the due date only. Amounts are not editable there:
 a package or an instalment changes what is owed, and those go through the
 payment path or the sheet itself. Clearing the field removes the date.

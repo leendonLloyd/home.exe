@@ -20,6 +20,9 @@ export default function PaymentSheet({ open, row, excluded, busy, hasDueDates, o
   const stages = row.stages.filter((stage) => stage.amount);
   const saved = row.due || '';
   const due = dueEdit === null ? saved : dueEdit;
+  const entered = parseFloat(amount);
+  const full = row.balance != null && Math.abs(entered - row.balance) < 0.005;
+  const remaining = row.balance == null ? null : Math.round((row.balance - (entered || 0)) * 100) / 100;
   const paid = paidOf(row);
   const instalments = instalmentsOf(row);
   // Payments recorded against a roll-up leave the component line's instalment
@@ -92,6 +95,23 @@ export default function PaymentSheet({ open, row, excluded, busy, hasDueDates, o
         <div className="danger-zone">
           {paying ? (
             <>
+              <div className="row-form">
+                <button
+                  type="button"
+                  className={full ? 'btn primary block' : 'btn block'}
+                  onClick={() => setAmount(String(row.balance ?? ''))}
+                >
+                  Paid in full
+                </button>
+                <button
+                  type="button"
+                  className={full ? 'btn block' : 'btn primary block'}
+                  onClick={() => setAmount('')}
+                >
+                  Part payment
+                </button>
+              </div>
+
               <label className="field-label" htmlFor="pay-amount">
                 Amount to record
               </label>
@@ -101,12 +121,27 @@ export default function PaymentSheet({ open, row, excluded, busy, hasDueDates, o
                 inputMode="decimal"
                 step="0.01"
                 value={amount}
+                placeholder="0.00"
                 onChange={(event) => setAmount(event.target.value)}
               />
+
+              {/* What this leaves owing is the thing worth knowing before
+                  committing it, and it is the sheet's own arithmetic. */}
+              {entered > 0 ? (
+                <p className={remaining > 0 ? 'muted small' : 'muted small'}>
+                  {remaining > 0
+                    ? `Leaves ${money(remaining)} outstanding.`
+                    : remaining === 0
+                      ? 'Settles this vendor.'
+                      : `That is ${money(-remaining)} more than the balance.`}
+                </p>
+              ) : null}
+
               <p className="muted small">
                 Goes into <strong>{row.nextStage}</strong>, the first empty instalment column. The sheet recalculates
                 the balance itself — nothing writes to FINAL PAYMENT.
               </p>
+
               <div className="row-form">
                 <button type="button" className="btn block" onClick={() => setPaying(false)}>
                   Cancel
@@ -114,9 +149,9 @@ export default function PaymentSheet({ open, row, excluded, busy, hasDueDates, o
                 <button
                   type="button"
                   className="btn primary block"
-                  disabled={busy || !(parseFloat(amount) > 0)}
+                  disabled={busy || !(entered > 0)}
                   onClick={() => {
-                    onRecordPayment(row, parseFloat(amount));
+                    onRecordPayment(row, entered);
                     onClose();
                   }}
                 >
@@ -126,7 +161,7 @@ export default function PaymentSheet({ open, row, excluded, busy, hasDueDates, o
             </>
           ) : (
             <button type="button" className="btn primary block" disabled={busy} onClick={() => setPaying(true)}>
-              Mark as paid
+              Record a payment
             </button>
           )}
         </div>
