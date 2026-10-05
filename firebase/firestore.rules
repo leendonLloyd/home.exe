@@ -7,10 +7,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Replace with the two Google accounts that may read and write.
+    // The two Google accounts that may read and write. Check the first is the
+    // address you actually sign in with — a wrong one here locks you out of
+    // your own data, and the failure only says "insufficient permissions".
     function household() {
       return [
-        'REPLACE_WITH_YOUR_GMAIL',
+        'lloyd.dimamay@gmail.com',
         'REPLACE_WITH_HER_GMAIL'
       ];
     }

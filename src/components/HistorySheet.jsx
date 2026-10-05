@@ -13,7 +13,7 @@ function statusOf(session) {
   return null;
 }
 
-export default function HistorySheet({ open, sessions, onClose, onDelete, onExport, onImport }) {
+export default function HistorySheet({ open, sessions, onClose, onDelete, onExport, onImport, onDeviceImport }) {
   const fileRef = useRef(null);
 
   return (
@@ -23,6 +23,11 @@ export default function HistorySheet({ open, sessions, onClose, onDelete, onExpo
       onClose={onClose}
       footer={
         <div className="row-form">
+          {onDeviceImport ? (
+            <button type="button" className="btn block" onClick={onDeviceImport}>
+              Import this device
+            </button>
+          ) : null}
           <button type="button" className="btn block" onClick={onExport}>
             Export JSON
           </button>

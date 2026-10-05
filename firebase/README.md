@@ -44,21 +44,23 @@ public by design, and the rules above are what actually gate access.
 
 ## Shape of the data
 
+Firestore paths alternate collection and document, so everything for one app
+lives in a single collection with named documents inside it:
+
 ```
-households/home/
-  laundry/owners/{ownerId}
-  laundry/items/{itemId}
-  laundry/counts            one doc, a field per item, so increment() applies
-  laundry/sessions/{sessionId}
-  workout/entries/{entryId}
-  workout/current           in-progress sets and the selected plan
-  bills/bills/{billId}
-  bills/payments/{billId__period}
+households/home/laundry/config      owners and clothing types
+households/home/laundry/counts      one field per item id
+households/home/laundry/bulk-<id>   one document per saved bulk
 ```
 
-Counts live as fields on a single document so two people counting the same pile
-each send `increment(1)` rather than a whole-object write, which is the case
-`localStorage` could never get right.
+`counts` is a single document with a field per item so a tap sends
+`increment(1)` rather than rewriting a document the other phone is also
+editing. That is the case localStorage could never get right: two people over
+the same pile, both counting.
+
+One listener on the `laundry` collection covers the whole app.
+
+Workout and Bills are not moved yet and still read from localStorage.
 
 ## Migrating what is already there
 

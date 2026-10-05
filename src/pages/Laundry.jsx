@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import DeviceImportSheet from '../components/DeviceImportSheet';
 import HistorySheet from '../components/HistorySheet';
 import ItemCard from '../components/ItemCard';
 import ItemSheet from '../components/ItemSheet';
@@ -8,7 +9,7 @@ import OwnerSheet from '../components/OwnerSheet';
 import SaveSheet from '../components/SaveSheet';
 import Sheet from '../components/Sheet';
 import { COLOR_TYPES } from '../lib/defaults';
-import { useLaundryStore } from '../lib/store';
+import { useLaundryStore } from '../lib/laundryCloud';
 
 export default function Laundry() {
   const store = useLaundryStore();
@@ -232,6 +233,13 @@ export default function Laundry() {
         onSave={store.saveSession}
       />
 
+      <DeviceImportSheet
+        open={sheet === 'device'}
+        cloud={store.state}
+        onClose={() => setSheet(null)}
+        onImport={store.replaceAll}
+      />
+
       <HistorySheet
         open={sheet === 'history'}
         sessions={sessions}
@@ -239,6 +247,7 @@ export default function Laundry() {
         onDelete={store.deleteSession}
         onExport={store.exportState}
         onImport={store.importState}
+        onDeviceImport={() => setSheet('device')}
       />
     </div>
   );

@@ -2,7 +2,7 @@
 // have been found again; everything else here is derived from it, so the
 // history list and the check page can never disagree about what's outstanding.
 
-export const returnedOf = (session, itemId) => session.returned?.[itemId] ?? 0;
+export const returnedOf = (session, itemId) => Math.max(0, session.returned?.[itemId] ?? 0);
 
 // Clamped, because a line's count can shrink on import and a stale `returned`
 // entry shouldn't be able to report more pieces back than were ever sent.

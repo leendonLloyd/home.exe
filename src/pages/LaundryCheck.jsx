@@ -4,7 +4,7 @@ import CheckCard from '../components/CheckCard';
 import Sheet from '../components/Sheet';
 import { COLOR_TYPES } from '../lib/defaults';
 import { checkProgress, remainingOf, shortLines } from '../lib/laundryCheck';
-import { useLaundryStore } from '../lib/store';
+import { useLaundryStore } from '../lib/laundryCloud';
 
 export default function LaundryCheck() {
   const { sessionId } = useParams();

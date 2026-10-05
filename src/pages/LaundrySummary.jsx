@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { COLOR_TYPES } from '../lib/defaults';
-import { useLaundryStore } from '../lib/store';
+import { useLaundryStore } from '../lib/laundryCloud';
 
 export default function LaundrySummary() {
   const { state } = useLaundryStore();
