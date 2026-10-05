@@ -55,7 +55,8 @@ collection under the household document and keeps its data as named documents
 inside it. One listener then covers a whole app.
 
 ```
-households/home/laundry/config      owners and clothing types
+households/home/laundry/own-<id>    one per owner
+households/home/laundry/itm-<id>    one per clothing type
 households/home/laundry/counts      one field per item id
 households/home/laundry/bulk-<id>   one per saved bulk
 
@@ -77,7 +78,12 @@ editing. That is the case localStorage could never get right: two people adding
 to the same list at once.
 
 Everything else is a document per record, so two phones editing different bills
-or different items never touch the same one.
+or different items never touch the same one. Laundry held its owners and
+clothing types as arrays in a single `config` document to begin with, which
+made adding one a read-modify-write and so last-write-wins; it now uses the
+same per-document shape, and migrates `config` on first load. Both shapes are
+read until that happens, preferring the documents, so nothing disappears
+mid-migration and it needs no flag day.
 
 Workout's seeded history stays in `workoutHistory.js` rather than Firestore —
 it is a transcription of a paper log, so editing the file is how it gets

@@ -1,15 +1,20 @@
-import { useCallback, useMemo } from 'react';
-import { deleteDoc, increment, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { deleteDoc, deleteField, increment, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { docRef, useCloudDocs } from './cloudDocs';
 import { DEFAULT_STATE, OWNER_COLORS } from './defaults';
 import { db } from './firebase';
 
-// One collection holds everything laundry: a `config` doc for owners and items,
-// a `counts` doc whose fields are per-item tallies, and one `bulk-*` doc per
-// saved session. A single listener then covers the whole app, and counts can be
-// bumped with increment() instead of rewriting a document two people are both
-// editing over the same pile of washing.
+// One collection holds everything laundry. Owners, clothing types and saved
+// bulks are each their own document, so two phones adding different things
+// write to different records and neither can overwrite the other. Counts are
+// the exception — one document with a field per item, because increment() is
+// what makes two people counting the same pile at once safe.
+//
+// `config` is the old shape, a single document holding both arrays. It is
+// still read so nothing disappears before it has been migrated.
 const ref = (id) => docRef('laundry', id);
+const OWNER = 'own-';
+const ITEM = 'itm-';
 const BULK = 'bulk-';
 
 const uid = (prefix) => `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -25,6 +30,17 @@ export const useLaundryStore = () => {
   const state = useMemo(() => {
     const d = docs ?? {};
     const config = d.config ?? {};
+
+    // Per-document records win; anything still only in `config` is carried
+    // until it is migrated, so the move needs no flag day.
+    const byId = (prefix, fallback) => {
+      const own = Object.entries(d).filter(([id]) => id.startsWith(prefix)).map(([, value]) => value);
+      const have = new Set(own.map((entry) => entry.id));
+      return [...own, ...(fallback ?? []).filter((entry) => !have.has(entry.id))];
+    };
+    const owners = byId(OWNER, config.owners);
+    const items = byId(ITEM, config.items);
+
     const counts = {};
     Object.entries(d.counts ?? {}).forEach(([itemId, value]) => {
       const n = atLeastZero(value);
@@ -34,48 +50,61 @@ export const useLaundryStore = () => {
       .filter(([id]) => id.startsWith(BULK))
       .map(([, value]) => value)
       .sort((a, b) => String(b.savedAt ?? b.date).localeCompare(String(a.savedAt ?? a.date)));
-    return { owners: config.owners ?? [], items: config.items ?? [], counts, sessions };
+    return { owners, items, counts, sessions, legacyConfig: Boolean(config.owners || config.items) };
   }, [docs]);
 
-  const writeConfig = useCallback((patch) => {
-    const next = { owners: state.owners, items: state.items, ...patch };
-    return setDoc(ref('config'), next, { merge: true }).catch(report);
-  }, [state.owners, state.items]);
-
-  const addOwner = useCallback((name) => writeConfig({
-    owners: [...state.owners, { id: uid('own'), name: name.trim(), color: OWNER_COLORS[state.owners.length % OWNER_COLORS.length] }],
-  }), [state.owners, writeConfig]);
+  const addOwner = useCallback((name) => {
+    const id = `own-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    return setDoc(ref(id), { id, name: name.trim(), color: OWNER_COLORS[state.owners.length % OWNER_COLORS.length] }).catch(report);
+  }, [state.owners.length, report]);
 
   const deleteOwner = useCallback((ownerId) => {
-    const items = state.items.filter((item) => item.ownerId !== ownerId);
-    const dropped = state.items.filter((item) => item.ownerId === ownerId).map((item) => item.id);
+    const orphaned = state.items.filter((item) => item.ownerId === ownerId);
     const batch = writeBatch(db);
-    batch.set(ref('config'), { owners: state.owners.filter((o) => o.id !== ownerId), items }, { merge: true });
-    if (dropped.length) {
-      batch.set(ref('counts'), Object.fromEntries(dropped.map((id) => [id, 0])), { merge: true });
+    batch.delete(ref(ownerId));
+    orphaned.forEach((item) => batch.delete(ref(item.id)));
+    if (orphaned.length) {
+      batch.set(ref('counts'), Object.fromEntries(orphaned.map((item) => [item.id, 0])), { merge: true });
+    }
+    // Only meaningful while the old single-document shape is still around.
+    if (state.legacyConfig) {
+      batch.set(ref('config'), {
+        owners: state.owners.filter((owner) => owner.id !== ownerId),
+        items: state.items.filter((item) => item.ownerId !== ownerId),
+      }, { merge: true });
     }
     return batch.commit().catch(report);
-  }, [state.owners, state.items]);
+  }, [state.owners, state.items, state.legacyConfig, report]);
 
   const saveItem = useCallback((draft) => {
     const { colorTypes, ...rest } = draft;
     const colors = colorTypes?.length ? colorTypes : [draft.colorType];
     const [primary, ...extras] = colors;
-    const base = draft.id
-      ? state.items.map((item) => (item.id === draft.id ? { ...item, ...rest, colorType: primary } : item))
-      : [...state.items, { ...rest, colorType: primary, id: uid('itm') }];
-    const added = extras
-      .filter((colorType) => !base.some((i) => i.name === rest.name && i.ownerId === rest.ownerId && i.colorType === colorType))
-      .map((colorType) => ({ ...rest, colorType, id: uid('itm') }));
-    return writeConfig({ items: [...base, ...added] });
-  }, [state.items, writeConfig]);
+    const batch = writeBatch(db);
+
+    const id = draft.id || `itm-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    batch.set(ref(id), { ...rest, id, colorType: primary }, { merge: true });
+
+    extras
+      .filter((colorType) => !state.items.some((item) =>
+        item.name === rest.name && item.ownerId === rest.ownerId && item.colorType === colorType))
+      .forEach((colorType, index) => {
+        const extraId = `itm-${Date.now().toString(36)}${index}${Math.random().toString(36).slice(2, 6)}`;
+        batch.set(ref(extraId), { ...rest, id: extraId, colorType });
+      });
+
+    return batch.commit().catch(report);
+  }, [state.items, report]);
 
   const deleteItem = useCallback((itemId) => {
     const batch = writeBatch(db);
-    batch.set(ref('config'), { items: state.items.filter((i) => i.id !== itemId) }, { merge: true });
+    batch.delete(ref(itemId));
     batch.set(ref('counts'), { [itemId]: 0 }, { merge: true });
+    if (state.legacyConfig) {
+      batch.set(ref('config'), { items: state.items.filter((item) => item.id !== itemId) }, { merge: true });
+    }
     return batch.commit().catch(report);
-  }, [state.items]);
+  }, [state.items, state.legacyConfig, report]);
 
   // The one write that genuinely needs to be conflict-free.
   const bumpCount = useCallback((itemId, delta) =>
@@ -127,8 +156,12 @@ export const useLaundryStore = () => {
    * household would both seed it, and seeding after someone has imported their
    * own data would leave the defaults sitting among it.
    */
-  const seedDefaults = useCallback(() =>
-    setDoc(ref('config'), { owners: DEFAULT_STATE.owners, items: DEFAULT_STATE.items }).catch(report), [report]);
+  const seedDefaults = useCallback(() => {
+    const batch = writeBatch(db);
+    DEFAULT_STATE.owners.forEach((owner) => batch.set(ref(owner.id), owner));
+    DEFAULT_STATE.items.forEach((item) => batch.set(ref(item.id), item));
+    return batch.commit().catch(report);
+  }, [report]);
 
   const exportState = useCallback(() => {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
@@ -143,9 +176,14 @@ export const useLaundryStore = () => {
   /** Replaces everything, so an import is never half-merged with what is there. */
   const replaceAll = useCallback(async (incoming) => {
     const batch = writeBatch(db);
-    batch.set(ref('config'), { owners: incoming.owners ?? [], items: incoming.items ?? [] });
+    // Clear the lot first: a replace that left yesterday's owners behind would
+    // be a merge, which is exactly what the import promises not to do.
+    Object.keys(docs ?? {})
+      .filter((id) => id !== 'counts')
+      .forEach((id) => batch.delete(ref(id)));
+    (incoming.owners ?? []).forEach((owner) => batch.set(ref(owner.id), owner));
+    (incoming.items ?? []).forEach((item) => batch.set(ref(item.id), item));
     batch.set(ref('counts'), incoming.counts ?? {});
-    Object.keys(docs ?? {}).filter((id) => id.startsWith(BULK)).forEach((id) => batch.delete(ref(id)));
     (incoming.sessions ?? []).forEach((session) => {
       const id = session.id || uid('ses');
       batch.set(ref(BULK + id), { ...session, id, returned: session.returned ?? {}, closedAt: session.closedAt ?? null });
@@ -160,6 +198,20 @@ export const useLaundryStore = () => {
       report(err);
     }
   }, [replaceAll]);
+
+  // Idempotent: the ids are already own-* and itm-*, so writing them as their
+  // own documents produces the same records whichever phone gets there first,
+  // and dropping an already-dropped config is a no-op.
+  const migrated = useRef(false);
+  useEffect(() => {
+    if (!ready || !state.legacyConfig || migrated.current) return;
+    migrated.current = true;
+    const batch = writeBatch(db);
+    state.owners.forEach((owner) => batch.set(ref(owner.id), owner));
+    state.items.forEach((item) => batch.set(ref(item.id), item));
+    batch.set(ref('config'), { owners: deleteField(), items: deleteField() }, { merge: true });
+    batch.commit().catch(report);
+  }, [ready, state.legacyConfig, state.owners, state.items, report]);
 
   return {
     state,
