@@ -37,15 +37,19 @@ export default function LaundryCheck() {
         .filter((section) => section.entries.length > 0);
     }
     // Bulks record the owner's name, not an id, because a bulk has to keep
-    // reading correctly after an owner is renamed or removed.
-    const people = [...new Set(session.lines.map((line) => line.ownerName))]
+    // reading correctly after an owner is renamed or removed. Ordering follows
+    // the owner list so the columns sit the same way round as on the counter;
+    // anyone no longer in it keeps their place at the end.
+    const present = [...new Set(session.lines.map((line) => line.ownerName))];
+    const configured = owners.map((owner) => owner.name).filter((name) => present.includes(name));
+    const people = [...configured, ...present.filter((name) => !configured.includes(name))]
       .map((name) => ({ key: name, name, color: ownerByName[name]?.color ?? '#6c7789' }));
 
     return COLOR_TYPES.map((color) => {
       const entries = session.lines.filter((line) => line.colorType === color.id);
       return { ...color, entries, columns: ownerColumns(entries, people, (line) => line.ownerName) };
     }).filter((section) => section.entries.length > 0);
-  }, [session, groupBy, ownerByName]);
+  }, [session, groupBy, ownerByName, owners]);
 
   if (!session) {
     return (

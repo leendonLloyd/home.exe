@@ -1401,15 +1401,22 @@ table.log .sum {
 
 /* ---------- per-owner columns ---------- */
 
+/* Two people side by side is the point; a third owner — household linen, say —
+   wraps to its own row rather than squeezing all three to 109px, which is
+   narrower than a card's own stepper needs. */
 .owner-columns {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 8px;
 }
 
 .owner-column {
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 1 1 150px;
+  min-width: 150px;
+  /* A column that wraps on to its own row keeps the same width as the ones
+     above rather than stretching across, so the cards stay in line. */
+  max-width: calc(50% - 4px);
   display: flex;
   flex-direction: column;
   gap: 6px;
