@@ -9,6 +9,7 @@ import OwnerSheet from '../components/OwnerSheet';
 import SaveSheet from '../components/SaveSheet';
 import Sheet from '../components/Sheet';
 import { COLOR_TYPES } from '../lib/defaults';
+import { ownerColumns, sortByName } from '../lib/laundryView';
 import { useLaundryStore } from '../lib/laundryCloud';
 
 export default function Laundry() {
@@ -85,8 +86,23 @@ export default function Laundry() {
 
   const sections = (
     groupBy === 'owner'
-      ? owners.map((owner) => ({ id: owner.id, label: owner.name, tint: owner.color, entries: items.filter((item) => item.ownerId === owner.id) }))
-      : COLOR_TYPES.map((color) => ({ ...color, entries: items.filter((item) => item.colorType === color.id) }))
+      ? owners.map((owner) => ({
+          id: owner.id,
+          label: owner.name,
+          tint: owner.color,
+          entries: sortByName(items.filter((item) => item.ownerId === owner.id)),
+        }))
+      : COLOR_TYPES.map((color) => ({
+          ...color,
+          entries: items.filter((item) => item.colorType === color.id),
+          // A colour group splits into a column each, so you count one
+          // person's darks without picking through the other's.
+          columns: ownerColumns(
+            items.filter((item) => item.colorType === color.id),
+            owners.map((owner) => ({ key: owner.id, name: owner.name, color: owner.color })),
+            (item) => item.ownerId
+          ),
+        }))
   ).filter((section) => section.entries.length > 0);
 
   const openItemSheet = (item) => {
@@ -151,7 +167,30 @@ export default function Laundry() {
                 ⌄
               </span>
             </button>
-            {collapsed[section.id] ? null : (
+            {collapsed[section.id] ? null : section.columns ? (
+              <div className="owner-columns">
+                {section.columns.map((column) => (
+                  <div className="owner-column" key={column.key}>
+                    <span className="owner-column-head" style={{ '--pill': column.color }}>
+                      {column.name}
+                    </span>
+                    {column.entries.map((item) => (
+                      <ItemCard
+                        key={item.id}
+                        item={item}
+                        pill={pillFor(item)}
+                        count={countOf(item.id)}
+                        onBump={(delta) => store.bumpCount(item.id, delta)}
+                        onOpenActions={() => {
+                          setEditing(item);
+                          setSheet('actions');
+                        }}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
               <div className="grid">
                 {section.entries.map((item) => (
                   <ItemCard

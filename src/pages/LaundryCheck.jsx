@@ -4,6 +4,7 @@ import CheckCard from '../components/CheckCard';
 import Sheet from '../components/Sheet';
 import { COLOR_TYPES } from '../lib/defaults';
 import { checkProgress, remainingOf, shortLines } from '../lib/laundryCheck';
+import { ownerColumns, sortByName } from '../lib/laundryView';
 import { useLaundryStore } from '../lib/laundryCloud';
 
 export default function LaundryCheck() {
@@ -31,14 +32,19 @@ export default function LaundryCheck() {
           id: name,
           label: name,
           tint: ownerByName[name]?.color ?? '#6c7789',
-          entries: session.lines.filter((line) => line.ownerName === name),
+          entries: sortByName(session.lines.filter((line) => line.ownerName === name)),
         }))
         .filter((section) => section.entries.length > 0);
     }
-    return COLOR_TYPES.map((color) => ({
-      ...color,
-      entries: session.lines.filter((line) => line.colorType === color.id),
-    })).filter((section) => section.entries.length > 0);
+    // Bulks record the owner's name, not an id, because a bulk has to keep
+    // reading correctly after an owner is renamed or removed.
+    const people = [...new Set(session.lines.map((line) => line.ownerName))]
+      .map((name) => ({ key: name, name, color: ownerByName[name]?.color ?? '#6c7789' }));
+
+    return COLOR_TYPES.map((color) => {
+      const entries = session.lines.filter((line) => line.colorType === color.id);
+      return { ...color, entries, columns: ownerColumns(entries, people, (line) => line.ownerName) };
+    }).filter((section) => section.entries.length > 0);
   }, [session, groupBy, ownerByName]);
 
   if (!session) {
@@ -161,7 +167,27 @@ export default function LaundryCheck() {
                   ⌄
                 </span>
               </button>
-              {collapsed[section.id] ? null : (
+              {collapsed[section.id] ? null : section.columns ? (
+                <div className="owner-columns">
+                  {section.columns.map((column) => (
+                    <div className="owner-column" key={column.key}>
+                      <span className="owner-column-head" style={{ '--pill': column.color }}>
+                        {column.name}
+                      </span>
+                      {column.entries.map((line) => (
+                        <CheckCard
+                          key={line.itemId}
+                          line={line}
+                          pill={pillFor(line)}
+                          remaining={remainingOf(session, line)}
+                          locked={progress.closed}
+                          onBump={(delta) => store.bumpReturn(session.id, line.itemId, delta)}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ) : (
                 <div className="grid">
                   {section.entries.map((line) => (
                     <CheckCard
