@@ -28,6 +28,7 @@ function doGet(e) {
     }
     if (view === 'todo') return json_({ ok: true, ...readAll_() });
     if (view === 'payments') return json_({ ok: true, ...readPayments_() });
+    if (view === 'seats') return json_({ ok: true, ...readSeats_() });
 
     return json_({ ok: false, error: 'Unknown view "' + view + '". Known views: ' + VIEWS_.join(', ') });
   } catch (err) {
@@ -35,7 +36,7 @@ function doGet(e) {
   }
 }
 
-const VIEWS_ = ['ping', 'todo', 'payments'];
+const VIEWS_ = ['ping', 'todo', 'payments', 'seats'];
 
 // Endpoints that predate ?view= and keep their own query shape.
 const ENDPOINTS_ = ['?list=entourage', '?rsvp=lookup&name=', '?rsvp=submit&m=&mobile='];
