@@ -117,11 +117,6 @@ function submit_(p) {
 }
 
 /**
- * Groups the sheet into invitations. Family (Groom/Bride side) invitations are
- * blocks of consecutive rows between blank rows. "Mutual" guests are not
- * grouped — each is its own single invitation.
- */
-/**
  * Seating: everyone who has not declined, with whatever is in TABLE NO.
  * (col D). The wedding site's seat plan renders that column directly, so the
  * sheet stays the source of truth — edit a cell and the page follows.
@@ -333,6 +328,11 @@ function applySeatPlan() {
   Logger.log('Seated ' + filled + ' guests. Left untouched: ' + (missed.join(', ') || 'none'));
 }
 
+/**
+ * Groups the sheet into invitations. Family (Groom/Bride side) invitations are
+ * blocks of consecutive rows between blank rows. "Mutual" guests are not
+ * grouped — each is its own single invitation.
+ */
 function buildGroups_(rows) {
   const groups = [];
   let fam = null;
@@ -395,7 +395,7 @@ function cleanName_(name) {
 function nameTokens_(name) {
   const s = String(name || '')
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '') // combining marks, escaped so copy-paste can't mangle them
+    .replace(/[\u0300-\u036f]/g, '') // combining marks, escaped so copy-paste can't mangle them
     .toLowerCase()
     .replace(/[.,]/g, ' ')
     .replace(/\b(mr|mrs|ms|miss|sir|madam|dr|doctor|engr|atty|rev|fr|hon|prof|sr|jr|iii|iv|ii)\b/g, ' ')
