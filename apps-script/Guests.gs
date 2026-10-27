@@ -151,6 +151,7 @@ function applySeatPlan() {
     "abonador mike": "TABLE 5",
     "abris ayrton john": "TABLE 6",
     "actorani cahuya": "TABLE 6",
+    "adela javier": "VIP 1",
     "adela lara": "VIP 1",
     "adelina magbanua": "TABLE 12",
     "aduna vincent": "TABLE 5",
