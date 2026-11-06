@@ -120,6 +120,7 @@ function submit_(p) {
  * Seating: everyone who has not declined, with whatever is in TABLE NO.
  * (col D). The wedding site's seat plan renders that column directly, so the
  * sheet stays the source of truth — edit a cell and the page follows.
+ * A name ending in ** is a baby on a high chair, which doesn't take a seat.
  */
 function readSeats_() {
   const sheet = guestsSheet_();
@@ -132,6 +133,7 @@ function readSeats_() {
       relationship: String(r[COL.RELATIONSHIP - 1] || '').trim(),
       table: String(r[COL.TABLE - 1] || '').trim(),
       vip: String(r[COL.NAME - 1] || '').trim().slice(-1) === '^',
+      highChair: /\*\s*\*/.test(String(r[COL.NAME - 1] || '')),
       response: String(r[COL.RESPONSE - 1] || '').trim().toLowerCase(),
     }))
     .filter((g) => g.name && g.response !== 'no');
