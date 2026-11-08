@@ -8,6 +8,7 @@ import KpiStrip from '../components/KpiStrip';
 import OwnerSheet from '../components/OwnerSheet';
 import SaveSheet from '../components/SaveSheet';
 import Sheet from '../components/Sheet';
+import TemplateSheet from '../components/TemplateSheet';
 import { COLOR_TYPES } from '../lib/defaults';
 import { ownerColumns, sortByName } from '../lib/laundryView';
 import { useLaundryStore } from '../lib/laundryCloud';
@@ -162,8 +163,8 @@ export default function Laundry() {
         ) : null}
 
         {derived.total === 0 && sessions.length > 0 ? (
-          <button type="button" className="btn block" onClick={() => useTemplate(sessions[0])}>
-            Start from {sessions[0].date} · {sessions[0].total} pieces
+          <button type="button" className="btn block" onClick={() => setSheet('template')}>
+            Start from a previous bulk
           </button>
         ) : null}
 
@@ -333,6 +334,14 @@ export default function Laundry() {
         ]}
         onClose={() => setSheet(null)}
         onImport={store.replaceAll}
+      />
+
+      <TemplateSheet
+        open={sheet === 'template'}
+        sessions={sessions}
+        items={items}
+        onClose={() => setSheet(null)}
+        onPick={useTemplate}
       />
 
       <Sheet
