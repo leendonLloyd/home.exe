@@ -20,6 +20,8 @@ export default function Laundry() {
   const [editing, setEditing] = useState(null);
   const [collapsed, setCollapsed] = useState({});
   const [groupBy, setGroupBy] = useState('color');
+  const [template, setTemplate] = useState(null);
+  const [templateNote, setTemplateNote] = useState(null);
 
   const toggleSection = (sectionId) => setCollapsed((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }));
 
@@ -105,6 +107,25 @@ export default function Laundry() {
         }))
   ).filter((section) => section.entries.length > 0);
 
+  const runTemplate = async (session) => {
+    const result = await store.applyTemplate(session);
+    setTemplate(null);
+    if (!result) return;
+    setTemplateNote(
+      result.missing
+        ? `Loaded ${result.applied} from ${session.date}. ${result.missing} line${result.missing === 1 ? '' : 's'} skipped — those clothing types no longer exist.`
+        : `Loaded ${result.applied} clothing type${result.applied === 1 ? '' : 's'} from ${session.date}.`
+    );
+  };
+
+  // Counting on top of a template would double what is already there, so an
+  // in-progress count has to be acknowledged before it is replaced.
+  const useTemplate = (session) => {
+    setSheet(null);
+    if (derived.total > 0) setTemplate(session);
+    else runTemplate(session);
+  };
+
   const openItemSheet = (item) => {
     setEditing(item);
     setSheet('item');
@@ -130,6 +151,21 @@ export default function Laundry() {
 
       <main className="scroll">
         <KpiStrip total={derived.total} pieces={derived.pieces} breakdowns={derived.breakdowns} />
+
+        {templateNote ? (
+          <div className="flag">
+            <strong>{templateNote}</strong>
+            <button type="button" className="btn small" onClick={() => setTemplateNote(null)}>
+              Dismiss
+            </button>
+          </div>
+        ) : null}
+
+        {derived.total === 0 && sessions.length > 0 ? (
+          <button type="button" className="btn block" onClick={() => useTemplate(sessions[0])}>
+            Start from {sessions[0].date} · {sessions[0].total} pieces
+          </button>
+        ) : null}
 
         <div className="segmented" role="tablist" aria-label="Group by">
           <button
@@ -299,11 +335,31 @@ export default function Laundry() {
         onImport={store.replaceAll}
       />
 
+      <Sheet
+        open={Boolean(template)}
+        title="Replace what is counted?"
+        onClose={() => setTemplate(null)}
+      >
+        <p className="muted small">
+          {derived.total} piece{derived.total === 1 ? '' : 's'} are already counted. Loading the {template?.date} bulk
+          replaces them with its {template?.total}.
+        </p>
+        <div className="row-form">
+          <button type="button" className="btn block" onClick={() => setTemplate(null)}>
+            Keep counting
+          </button>
+          <button type="button" className="btn danger block" onClick={() => runTemplate(template)}>
+            Replace
+          </button>
+        </div>
+      </Sheet>
+
       <HistorySheet
         open={sheet === 'history'}
         sessions={sessions}
         onClose={() => setSheet(null)}
         onDelete={store.deleteSession}
+        onUseTemplate={useTemplate}
         onExport={store.exportState}
         onImport={store.importState}
         onDeviceImport={() => setSheet('device')}

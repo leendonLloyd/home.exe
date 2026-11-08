@@ -13,7 +13,7 @@ function statusOf(session) {
   return null;
 }
 
-export default function HistorySheet({ open, sessions, onClose, onDelete, onExport, onImport, onDeviceImport }) {
+export default function HistorySheet({ open, sessions, onClose, onDelete, onUseTemplate, onExport, onImport, onDeviceImport }) {
   const fileRef = useRef(null);
 
   return (
@@ -65,6 +65,15 @@ export default function HistorySheet({ open, sessions, onClose, onDelete, onExpo
                 ) : null}
                 <span className="badge">{session.total}</span>
               </Link>
+              <button
+                type="button"
+                className="micro-btn"
+                onClick={() => onUseTemplate(session)}
+                title="Start a new bulk from this one"
+                aria-label={`Start a new bulk from the ${session.date} bulk`}
+              >
+                ↻
+              </button>
               <button
                 type="button"
                 className="micro-btn danger"

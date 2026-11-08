@@ -113,6 +113,31 @@ export const useLaundryStore = () => {
   const resetCounts = useCallback(() =>
     setDoc(ref('counts'), {}).catch(report), []);
 
+  /**
+   * Loads a past bulk's counts as the starting point for a new one.
+   *
+   * Replaces rather than adds, because a template is a starting point, not
+   * something to accumulate on top of what is already counted. Lines whose
+   * clothing type has since been deleted are reported rather than silently
+   * dropped, so a short total has an explanation.
+   */
+  const applyTemplate = useCallback(async (session) => {
+    const live = new Set(state.items.map((item) => item.id));
+    const counts = {};
+    let missing = 0;
+    (session.lines ?? []).forEach((line) => {
+      if (live.has(line.itemId)) counts[line.itemId] = line.count;
+      else missing += 1;
+    });
+    try {
+      await setDoc(ref('counts'), counts);
+      return { applied: Object.keys(counts).length, missing };
+    } catch (err) {
+      report(err);
+      return null;
+    }
+  }, [state.items, report]);
+
   const saveSession = useCallback((date, note) => {
     const lines = state.items
       .filter((item) => (state.counts[item.id] ?? 0) > 0)
@@ -219,7 +244,7 @@ export const useLaundryStore = () => {
     error,
     dismissError: () => setError(null),
     addOwner, deleteOwner, saveItem, deleteItem, bumpCount, resetCounts,
-    saveSession, deleteSession, bumpReturn, resetReturns, closeCheck, reopenCheck,
+    saveSession, deleteSession, bumpReturn, resetReturns, closeCheck, reopenCheck, applyTemplate,
     seedDefaults, exportState, importState, replaceAll,
   };
 };
