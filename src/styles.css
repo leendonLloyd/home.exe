@@ -1450,30 +1450,44 @@ table.log .sum {
     max-width: 1240px;
   }
 
+  /* Owners become full-width bands rather than side-by-side columns, so each
+     one has the whole width to spend. */
   .screen.wide .owner-columns {
-    gap: 18px;
+    display: block;
   }
 
-  /* Cards flow across the column instead of stacking, so a colour group is a
-     few rows deep rather than a long scroll. auto-fill rather than auto-fit so
-     a column holding two items keeps them card-sized instead of stretching
-     each one across the whole width. */
+  /* Two rows deep, flowing left to right, and the band scrolls sideways once an
+     owner holds more than fits. The cards are capped rather than stretched so a
+     band with two items looks like the one below it holding twelve. */
   .screen.wide .owner-column {
-    flex: 1 1 0;
     max-width: none;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-auto-flow: column;
+    grid-template-rows: repeat(2, auto);
+    grid-template-columns: max-content;
+    grid-auto-columns: minmax(170px, 240px);
+    justify-content: start;
     gap: 6px;
-    align-content: start;
+    overflow-x: auto;
+    padding-bottom: 4px;
   }
 
   .screen.wide .owner-column + .owner-column {
-    padding-left: 18px;
-    border-left: 1px solid var(--line);
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
   }
 
+  /* The name takes a track of its own beside the cards, and sticks while a long
+     band scrolls under it. Its background matches the group it sits in so the
+     cards pass behind it cleanly. */
   .screen.wide .owner-column-head {
-    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    align-self: center;
+    position: sticky;
+    left: 0;
+    padding-right: 10px;
+    background: color-mix(in srgb, var(--tint) 13%, var(--bg));
   }
 
   /* The by-owner view groups into sections rather than columns, so its cards
