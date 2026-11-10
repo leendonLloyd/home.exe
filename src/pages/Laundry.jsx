@@ -211,19 +211,21 @@ export default function Laundry() {
                     <span className="owner-column-head" style={{ '--pill': column.color }}>
                       {column.name}
                     </span>
-                    {column.entries.map((item) => (
-                      <ItemCard
-                        key={item.id}
-                        item={item}
-                        pill={pillFor(item)}
-                        count={countOf(item.id)}
-                        onBump={(delta) => store.bumpCount(item.id, delta)}
-                        onOpenActions={() => {
-                          setEditing(item);
-                          setSheet('actions');
-                        }}
-                      />
-                    ))}
+                    <div className="owner-rail">
+                      {column.entries.map((item) => (
+                        <ItemCard
+                          key={item.id}
+                          item={item}
+                          pill={pillFor(item)}
+                          count={countOf(item.id)}
+                          onBump={(delta) => store.bumpCount(item.id, delta)}
+                          onOpenActions={() => {
+                            setEditing(item);
+                            setSheet('actions');
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -178,16 +178,18 @@ export default function LaundryCheck() {
                       <span className="owner-column-head" style={{ '--pill': column.color }}>
                         {column.name}
                       </span>
-                      {column.entries.map((line) => (
-                        <CheckCard
-                          key={line.itemId}
-                          line={line}
-                          pill={pillFor(line)}
-                          remaining={remainingOf(session, line)}
-                          locked={progress.closed}
-                          onBump={(delta) => store.bumpReturn(session.id, line.itemId, delta)}
-                        />
-                      ))}
+                      <div className="owner-rail">
+                        {column.entries.map((line) => (
+                          <CheckCard
+                            key={line.itemId}
+                            line={line}
+                            pill={pillFor(line)}
+                            remaining={remainingOf(session, line)}
+                            locked={progress.closed}
+                            onBump={(delta) => store.bumpReturn(session.id, line.itemId, delta)}
+                          />
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>

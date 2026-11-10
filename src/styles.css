@@ -1434,6 +1434,12 @@ table.log .sum {
   text-overflow: ellipsis;
 }
 
+/* The rail only exists so the desktop layout can scroll the cards without
+   taking the heading with them; on mobile it is not a box at all. */
+.owner-rail {
+  display: contents;
+}
+
 /* Columns are narrow, so the owner pill on each card would only repeat the
    column heading above it. */
 .owner-column .item .pill {
@@ -1456,38 +1462,38 @@ table.log .sum {
     display: block;
   }
 
-  /* Two rows deep, flowing left to right, and the band scrolls sideways once an
+  .screen.wide .owner-column {
+    display: block;
+    max-width: none;
+  }
+
+  .screen.wide .owner-column + .owner-column {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  /* The name reads as a heading over its band rather than a label beside it,
+     so it wants more weight than the 11px it gets in a narrow column. */
+  .screen.wide .owner-column-head {
+    display: block;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+
+  /* Two rows deep, flowing left to right, and the rail scrolls sideways once an
      owner holds more than fits. The cards are capped rather than stretched so a
      band with two items looks like the one below it holding twelve. */
-  .screen.wide .owner-column {
-    max-width: none;
+  .screen.wide .owner-rail {
     display: grid;
     grid-auto-flow: column;
     grid-template-rows: repeat(2, auto);
-    grid-template-columns: max-content;
     grid-auto-columns: minmax(170px, 240px);
     justify-content: start;
     gap: 6px;
     overflow-x: auto;
     padding-bottom: 4px;
-  }
-
-  .screen.wide .owner-column + .owner-column {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--line);
-  }
-
-  /* The name takes a track of its own beside the cards, and sticks while a long
-     band scrolls under it. Its background matches the group it sits in so the
-     cards pass behind it cleanly. */
-  .screen.wide .owner-column-head {
-    grid-row: 1 / -1;
-    align-self: center;
-    position: sticky;
-    left: 0;
-    padding-right: 10px;
-    background: color-mix(in srgb, var(--tint) 13%, var(--bg));
   }
 
   /* The by-owner view groups into sections rather than columns, so its cards
