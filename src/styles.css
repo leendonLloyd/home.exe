@@ -1482,18 +1482,13 @@ table.log .sum {
     margin-bottom: 8px;
   }
 
-  /* Two rows deep, flowing left to right, and the rail scrolls sideways once an
-     owner holds more than fits. The cards are capped rather than stretched so a
-     band with two items looks like the one below it holding twelve. */
+  /* Six to a row, filling across before wrapping down. Six fixed tracks rather
+     than auto-fill so a band holding two keeps them card-sized instead of
+     stretching each one across half the width. */
   .screen.wide .owner-rail {
     display: grid;
-    grid-auto-flow: column;
-    grid-template-rows: repeat(2, auto);
-    grid-auto-columns: minmax(170px, 240px);
-    justify-content: start;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 6px;
-    overflow-x: auto;
-    padding-bottom: 4px;
   }
 
   /* The by-owner view groups into sections rather than columns, so its cards
