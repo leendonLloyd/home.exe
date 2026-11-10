@@ -53,7 +53,7 @@ export default function LaundryCheck() {
 
   if (!session) {
     return (
-      <div className="screen">
+      <div className="screen wide">
         <header className="app-bar">
           <Link to="/laundry" className="icon-btn" aria-label="Back to counter">
             ←
@@ -80,7 +80,7 @@ export default function LaundryCheck() {
       : { label: line.ownerName, color: ownerByName[line.ownerName]?.color ?? '#6c7789' };
 
   return (
-    <div className="screen">
+    <div className="screen wide">
       <header className="app-bar">
         <Link to="/laundry" className="icon-btn" aria-label="Back to counter">
           ←

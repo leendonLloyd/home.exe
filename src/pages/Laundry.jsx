@@ -133,7 +133,7 @@ export default function Laundry() {
   };
 
   return (
-    <div className="screen">
+    <div className="screen wide">
       <header className="app-bar">
         <Link to="/" className="icon-btn" aria-label="Back to hub">
           ←

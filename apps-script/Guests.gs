@@ -118,25 +118,47 @@ function submit_(p) {
 
 /**
  * Seating: everyone who has not declined, with whatever is in TABLE NO.
- * (col D). The wedding site's seat plan renders that column directly, so the
- * sheet stays the source of truth — edit a cell and the page follows.
- * A name ending in ** is a baby on a high chair, which doesn't take a seat.
+ * (col D) and the SEAT column. The wedding site's seat plan renders those
+ * directly, so the sheet stays the source of truth — edit a cell and the page
+ * follows. A name ending in ** is a baby on a high chair, which doesn't take a seat.
+ *
+ * SEAT is found by its header ("SEAT" or "SEAT NO.") wherever it sits, so the
+ * column can be added without moving the ones the RSVP form writes to. group is
+ * the sheet row where the guest's block of rows starts, so the site can seat a
+ * family side by side.
  */
 function readSeats_() {
   const sheet = guestsSheet_();
   const lastRow = sheet.getLastRow();
   if (lastRow < DATA_START) return { updated: new Date().toISOString(), guests: [] };
-  const values = sheet.getRange(DATA_START, 1, lastRow - (DATA_START - 1), 8).getValues();
-  const guests = values
-    .map((r) => ({
-      name: cleanName_(r[COL.NAME - 1]),
+  const width = Math.max(sheet.getLastColumn(), COL.NOTES);
+  const header = sheet.getRange(1, 1, DATA_START - 1, width).getValues();
+  let seatCol = -1;
+  header.forEach((row) => row.forEach((v, c) => {
+    if (seatCol < 0 && /^\s*seats?(\s*no\.?)?\s*$/i.test(String(v))) seatCol = c;
+  }));
+  const values = sheet.getRange(DATA_START, 1, lastRow - (DATA_START - 1), width).getValues();
+  const guests = [];
+  let group = 0;
+  values.forEach((r, i) => {
+    const raw = String(r[COL.NAME - 1] || '').trim();
+    if (!raw) {
+      group = 0; // blank row ends a block
+      return;
+    }
+    if (!group) group = DATA_START + i;
+    const g = {
+      name: cleanName_(raw),
       relationship: String(r[COL.RELATIONSHIP - 1] || '').trim(),
       table: String(r[COL.TABLE - 1] || '').trim(),
-      vip: String(r[COL.NAME - 1] || '').trim().slice(-1) === '^',
-      highChair: /\*\s*\*/.test(String(r[COL.NAME - 1] || '')),
+      seat: seatCol < 0 ? '' : String(r[seatCol] || '').trim(),
+      group,
+      vip: raw.slice(-1) === '^',
+      highChair: /\*\s*\*/.test(raw),
       response: String(r[COL.RESPONSE - 1] || '').trim().toLowerCase(),
-    }))
-    .filter((g) => g.name && g.response !== 'no');
+    };
+    if (g.name && g.response !== 'no') guests.push(g);
+  });
   return { updated: new Date().toISOString(), guests };
 }
 
