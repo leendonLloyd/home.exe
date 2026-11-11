@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
+import { COLOR_TYPES } from '../lib/defaults';
 import { sortByName } from '../lib/laundryView';
 import Sheet from './Sheet';
 
-function CountRow({ label, owner, count, onBump }) {
+function CountRow({ label, owner, color, count, onBump }) {
   return (
     <li className={count > 0 ? undefined : 'dim'}>
       <span className="summary-label">
         {label} · <span className="muted">{owner}</span>
+        {/* The same name can exist in two colour groups, so without this a
+            household with Shi's lights and darks dresses shows two identical
+            rows and no way to tell which one is being changed. */}
+        {color ? (
+          <span className="pill" style={{ '--pill': color.tint }}>
+            {color.label}
+          </span>
+        ) : null}
       </span>
       <span className="stepper">
         <button type="button" onClick={() => onBump(-1)} disabled={count === 0} aria-label={`Decrease ${label}`}>
@@ -40,8 +49,11 @@ export default function EditBulkSheet({ open, session, items, owners, onClose, o
   const bump = (itemId, delta) =>
     setCounts((prev) => ({ ...prev, [itemId]: Math.max(0, (prev[itemId] ?? 0) + delta) }));
 
+  const colorById = Object.fromEntries(COLOR_TYPES.map((color) => [color.id, color]));
   const ownerOf = (itemId) =>
     owners.find((owner) => owner.id === items.find((item) => item.id === itemId)?.ownerId)?.name;
+  const colorOf = (itemId, fallback) =>
+    colorById[items.find((item) => item.id === itemId)?.colorType ?? fallback];
 
   const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
   const saved = new Set((session.lines ?? []).map((line) => line.itemId));
@@ -83,6 +95,7 @@ export default function EditBulkSheet({ open, session, items, owners, onClose, o
             key={line.itemId}
             label={line.name}
             owner={ownerOf(line.itemId) ?? line.ownerName}
+            color={colorOf(line.itemId, line.colorType)}
             count={counts[line.itemId] ?? 0}
             onBump={(delta) => bump(line.itemId, delta)}
           />
@@ -105,6 +118,7 @@ export default function EditBulkSheet({ open, session, items, owners, onClose, o
                 key={item.id}
                 label={item.name}
                 owner={ownerOf(item.id) ?? 'Unassigned'}
+                color={colorById[item.colorType]}
                 count={counts[item.id] ?? 0}
                 onBump={(delta) => bump(item.id, delta)}
               />
