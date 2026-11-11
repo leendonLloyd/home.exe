@@ -692,6 +692,10 @@ input:focus {
   font-size: 14px;
 }
 
+.stack-list > li.dim {
+  opacity: 0.45;
+}
+
 .stack-list.compact > li {
   padding: 6px 10px;
   font-size: 13px;

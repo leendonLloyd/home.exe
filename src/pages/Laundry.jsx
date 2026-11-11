@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DeviceImportSheet from '../components/DeviceImportSheet';
+import EditBulkSheet from '../components/EditBulkSheet';
 import HistorySheet from '../components/HistorySheet';
 import ItemCard from '../components/ItemCard';
 import ItemSheet from '../components/ItemSheet';
@@ -22,6 +23,7 @@ export default function Laundry() {
   const [collapsed, setCollapsed] = useState({});
   const [groupBy, setGroupBy] = useState('color');
   const [template, setTemplate] = useState(null);
+  const [editingSession, setEditingSession] = useState(null);
   const [templateNote, setTemplateNote] = useState(null);
 
   const toggleSection = (sectionId) => setCollapsed((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }));
@@ -365,11 +367,24 @@ export default function Laundry() {
         </div>
       </Sheet>
 
+      <EditBulkSheet
+        open={sheet === 'edit'}
+        session={editingSession}
+        items={items}
+        owners={owners}
+        onClose={() => setSheet(null)}
+        onSave={store.updateSession}
+      />
+
       <HistorySheet
         open={sheet === 'history'}
         sessions={sessions}
         onClose={() => setSheet(null)}
         onDelete={store.deleteSession}
+        onEdit={(session) => {
+          setEditingSession(session);
+          setSheet('edit');
+        }}
         onUseTemplate={useTemplate}
         onExport={store.exportState}
         onImport={store.importState}

@@ -159,6 +159,42 @@ export const useLaundryStore = () => {
     return batch.commit().catch(report);
   }, [state.items, state.counts, state.owners]);
 
+  /**
+   * Rewrites a saved bulk, for a date typed wrong or a miscount found later.
+   *
+   * Lines are rebuilt from the live clothing types so a renamed item or a
+   * reassigned owner comes through, falling back to what the bulk stored for a
+   * type that has since been deleted. Returned counts are clamped to the new
+   * line counts rather than left dangling, so a bulk cannot end up with more
+   * back than went out.
+   */
+  const updateSession = useCallback((sessionId, { date, note, counts }) => {
+    const session = state.sessions.find((s) => s.id === sessionId);
+    if (!session) return Promise.resolve();
+    const saved = Object.fromEntries((session.lines ?? []).map((line) => [line.itemId, line]));
+    const lines = Object.entries(counts)
+      .filter(([itemId, count]) => count > 0 && (saved[itemId] || state.items.some((i) => i.id === itemId)))
+      .map(([itemId, count]) => {
+        const item = state.items.find((i) => i.id === itemId);
+        if (!item) return { ...saved[itemId], count };
+        const owner = state.owners.find((o) => o.id === item.ownerId);
+        return {
+          itemId, name: item.name, icon: item.icon, colorType: item.colorType,
+          ownerName: owner ? owner.name : 'Unassigned', count,
+        };
+      });
+    if (!lines.length) return Promise.resolve();
+    const returned = {};
+    lines.forEach((line) => {
+      const back = session.returned?.[line.itemId] ?? 0;
+      if (back > 0) returned[line.itemId] = Math.min(back, line.count);
+    });
+    return updateDoc(ref(BULK + sessionId), {
+      date, note: note.trim(), lines, returned,
+      total: lines.reduce((sum, line) => sum + line.count, 0),
+    }).catch(report);
+  }, [state.sessions, state.items, state.owners]);
+
   const deleteSession = useCallback((sessionId) =>
     deleteDoc(ref(BULK + sessionId)).catch(report), []);
 
@@ -244,7 +280,7 @@ export const useLaundryStore = () => {
     error,
     dismissError: () => setError(null),
     addOwner, deleteOwner, saveItem, deleteItem, bumpCount, resetCounts,
-    saveSession, deleteSession, bumpReturn, resetReturns, closeCheck, reopenCheck, applyTemplate,
+    saveSession, updateSession, deleteSession, bumpReturn, resetReturns, closeCheck, reopenCheck, applyTemplate,
     seedDefaults, exportState, importState, replaceAll,
   };
 };

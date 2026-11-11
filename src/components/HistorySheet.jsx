@@ -13,7 +13,7 @@ function statusOf(session) {
   return null;
 }
 
-export default function HistorySheet({ open, sessions, onClose, onDelete, onUseTemplate, onExport, onImport, onDeviceImport }) {
+export default function HistorySheet({ open, sessions, onClose, onDelete, onEdit, onUseTemplate, onExport, onImport, onDeviceImport }) {
   const fileRef = useRef(null);
 
   return (
@@ -65,6 +65,15 @@ export default function HistorySheet({ open, sessions, onClose, onDelete, onUseT
                 ) : null}
                 <span className="badge">{session.total}</span>
               </Link>
+              <button
+                type="button"
+                className="micro-btn"
+                onClick={() => onEdit(session)}
+                title="Edit this bulk"
+                aria-label={`Edit the ${session.date} bulk`}
+              >
+                ✎
+              </button>
               <button
                 type="button"
                 className="micro-btn"
