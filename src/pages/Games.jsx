@@ -14,7 +14,7 @@ const describe = (kind, item) => {
   if (kind === 'question') return { title: item.q, sub: `A ${item.a} · B ${item.b}`, tag: item.answer || 'not set' };
   if (kind === 'prize') return { title: item.name, sub: item.image ? 'Has a photo' : 'No photo', tag: `${item.tier} ×${item.quantity || 1}` };
   if (kind === 'tiebreaker') return { title: item.q, sub: item.answer || 'Answer not set', tag: '' };
-  return { title: item.title, sub: [item.artist, item.youtube ? `clip ${item.start || '0:00'} +${item.length || 10}s` : 'no clip', item.note].filter(Boolean).join(' · '), tag: '' };
+  return { title: item.title, sub: [item.artist, item.youtube ? `clips ${[item.start || '0:00', item.start2, item.start3].filter(Boolean).join(' / ')} · ${item.length || 10}s` : 'no clip', item.note].filter(Boolean).join(' · '), tag: '' };
 };
 
 export default function Games() {

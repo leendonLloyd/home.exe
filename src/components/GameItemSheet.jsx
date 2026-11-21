@@ -7,7 +7,7 @@ const youtubeId = (url) => (String(url).match(/(?:youtu\.be\/|[?&]v=|embed\/|sho
 const EMPTY = {
   question: { round: '', q: '', a: '', b: '', answer: '' },
   tiebreaker: { q: '', answer: '' },
-  song: { title: '', artist: '', youtube: '', start: '0:00', length: 10, note: '' },
+  song: { title: '', artist: '', youtube: '', start: '0:00', start2: '', start3: '', length: 10, note: '' },
   prize: { name: '', tier: 'minor', quantity: 1, image: '' },
 };
 
@@ -89,15 +89,23 @@ export default function GameItemSheet({ open, kind, item, rounds, onClose, onSav
           {badLink ? <p className="muted small dn">That doesn't look like a YouTube video link.</p> : null}
           <div className="row-form">
             <div>
-              <label className="field-label" htmlFor="game-start">Start at (m:ss)</label>
-              <input id="game-start" inputMode="numeric" value={draft.start ?? ''} placeholder="0:45" onChange={(event) => patch({ start: event.target.value })} />
+              <label className="field-label" htmlFor="game-start">Part 1 starts at (m:ss)</label>
+              <input id="game-start" inputMode="numeric" value={draft.start ?? ''} placeholder="0:00" onChange={(event) => patch({ start: event.target.value })} />
             </div>
             <div>
               <label className="field-label" htmlFor="game-length">Clip length (seconds)</label>
               <input id="game-length" type="number" inputMode="numeric" min="1" value={draft.length ?? ''} onChange={(event) => patch({ length: event.target.value })} />
             </div>
           </div>
-          <p className="muted small">The games page plays just this part straight from YouTube. Use "Play the clip" on its Guess the Tune tab to check it.</p>
+          <div className="row-form">
+            {[['start2', 'Hint 2 starts at', '0:45'], ['start3', 'Hint 3 starts at', '1:15']].map(([key, label, placeholder]) => (
+              <div key={key}>
+                <label className="field-label" htmlFor={`game-${key}`}>{label}</label>
+                <input id={`game-${key}`} inputMode="numeric" value={draft[key] ?? ''} placeholder={placeholder} onChange={(event) => patch({ [key]: event.target.value })} />
+              </div>
+            ))}
+          </div>
+          <p className="muted small">Each part plays for the clip length. Leave a hint blank to hide its button. The games page plays them straight from YouTube. Use the Part buttons on its Guess the Tune tab to check them.</p>
           {field('note', 'Note for the band or tech', 'e.g. play the first 10 seconds')}
         </>
       ) : null}
