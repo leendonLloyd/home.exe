@@ -82,10 +82,12 @@ answers, nothing private.
 weddingGames/q-<id>      one per Last Man Standing question (round, q, a, b, answer, order)
 weddingGames/tb-<id>     one per tiebreaker (q, answer, order)
 weddingGames/song-<id>   one per Guess the Tune song (title, artist, note, order)
+weddingGames/prize-<id>  one per raffle prize (name, tier, quantity, image, order)
 ```
 
-The games page reads it over Firestore's REST API and falls back to the site's
-`games.json` for any list that is empty here or when Firestore can't be reached.
+The games and raffle pages read it over Firestore's REST API (the site's
+`wedding-games.js`) and fall back to `games.json` / `raffle-prizes.json` for any
+list that is empty here or when Firestore can't be reached.
 
 `counts` and `cart` are single documents with a field per item so a tap sends
 `increment(1)` rather than rewriting a document the other phone is also

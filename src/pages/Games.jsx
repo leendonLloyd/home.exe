@@ -4,13 +4,15 @@ import GameItemSheet from '../components/GameItemSheet';
 import { GAMES_PAGE, KINDS, useGamesStore } from '../lib/gamesCloud';
 
 const TABS = [
-  { kind: 'question', label: 'Last Man Standing' },
+  { kind: 'question', label: 'Questions' },
   { kind: 'tiebreaker', label: 'Tiebreakers' },
-  { kind: 'song', label: 'Guess the Tune' },
+  { kind: 'song', label: 'Songs' },
+  { kind: 'prize', label: 'Prizes' },
 ];
 
 const describe = (kind, item) => {
   if (kind === 'question') return { title: item.q, sub: `A ${item.a} · B ${item.b}`, tag: item.answer || 'not set' };
+  if (kind === 'prize') return { title: item.name, sub: item.image ? 'Has a photo' : 'No photo', tag: `${item.tier} ×${item.quantity || 1}` };
   if (kind === 'tiebreaker') return { title: item.q, sub: item.answer || 'Answer not set', tag: '' };
   return { title: item.title, sub: [item.artist, item.note].filter(Boolean).join(' · '), tag: '' };
 };
@@ -32,7 +34,7 @@ export default function Games() {
         </Link>
         <div>
           <h1>Wedding games</h1>
-          <p className="muted">{store.ready ? `${store.lists.question.length} questions · ${store.lists.song.length} songs` : 'Loading…'}</p>
+          <p className="muted">{store.ready ? `${store.lists.question.length} questions · ${store.lists.song.length} songs · ${store.lists.prize.length} prizes` : 'Loading…'}</p>
         </div>
         <a className="btn small" href={GAMES_PAGE} target="_blank" rel="noopener noreferrer">
           Open page
@@ -59,14 +61,17 @@ export default function Games() {
           </div>
         ) : null}
 
-        {store.empty ? (
+        {store.ready && !list.length ? (
           <div className="flag">
-            <strong>Nothing saved here yet.</strong> The games page is showing its games.json copy. Start from that copy, then edit it here.
-            <button type="button" className="btn primary block" onClick={store.seedFromJson}>
-              Copy from games.json
+            <strong>Nothing saved here yet.</strong> The {kind === 'prize' ? 'raffle' : 'games'} page is showing its{' '}
+            {kind === 'prize' ? 'raffle-prizes.json' : 'games.json'} copy. Start from that copy, then edit it here.
+            <button type="button" className="btn primary block" onClick={() => store.seedFromJson(kind)}>
+              Copy from {kind === 'prize' ? 'raffle-prizes.json' : 'games.json'}
             </button>
           </div>
         ) : null}
+
+        {kind === 'prize' && list.length ? <p className="flag small">The raffle draws minor prizes first and the grand prize last; within a tier, in this order.</p> : null}
 
         {kind === 'question' && unset ? <p className="flag small">{unset} question{unset > 1 ? 's have' : ' has'} no answer set yet.</p> : null}
 
@@ -107,8 +112,7 @@ export default function Games() {
           })}
         </div>
 
-        {store.ready && !store.empty && !list.length ? <p className="empty">None yet. Add one below.</p> : null}
-        <p className="muted small">Changes show on the games page the next time it loads. If Firestore can't be reached, the page falls back to games.json.</p>
+        <p className="muted small">Changes show on the games and raffle pages the next time they load. If Firestore can't be reached, they fall back to their JSON files.</p>
       </main>
 
       <nav className="tab-bar">

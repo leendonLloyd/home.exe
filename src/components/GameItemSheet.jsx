@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { KINDS } from '../lib/gamesCloud';
+import { KINDS, TIERS } from '../lib/gamesCloud';
 import Sheet from './Sheet';
 
 const EMPTY = {
   question: { round: '', q: '', a: '', b: '', answer: '' },
   tiebreaker: { q: '', answer: '' },
   song: { title: '', artist: '', note: '' },
+  prize: { name: '', tier: 'minor', quantity: 1, image: '' },
 };
 
 export default function GameItemSheet({ open, kind, item, rounds, onClose, onSave, onDelete }) {
@@ -23,11 +24,12 @@ export default function GameItemSheet({ open, kind, item, rounds, onClose, onSav
     </>
   );
 
-  const canSubmit = kind === 'song' ? Boolean(draft.title?.trim()) : Boolean(draft.q?.trim()) && (kind !== 'question' || (draft.a?.trim() && draft.b?.trim()));
+  const quantity = parseInt(draft.quantity, 10);
+  const canSubmit = kind === 'prize' ? Boolean(draft.name?.trim()) && quantity >= 1 : kind === 'song' ? Boolean(draft.title?.trim()) : Boolean(draft.q?.trim()) && (kind !== 'question' || (draft.a?.trim() && draft.b?.trim()));
   const submit = () => {
     if (!canSubmit) return;
     const clean = Object.fromEntries(Object.entries(draft).map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value]));
-    onSave(clean);
+    onSave(kind === 'prize' ? { ...clean, quantity } : clean);
     onClose();
   };
 
@@ -80,6 +82,24 @@ export default function GameItemSheet({ open, kind, item, rounds, onClose, onSav
           {field('title', 'Title', 'Song title')}
           {field('artist', 'Artist', 'Artist')}
           {field('note', 'Note for the band or tech', 'e.g. play the first 10 seconds')}
+        </>
+      ) : null}
+
+      {kind === 'prize' ? (
+        <>
+          {field('name', 'Prize', 'Kuchenluxe 17-inch Electric Griller')}
+          <label className="field-label">Tier</label>
+          <div className="segmented" role="radiogroup" aria-label="Tier">
+            {TIERS.map((tier) => (
+              <button key={tier} type="button" role="radio" aria-checked={draft.tier === tier} className={draft.tier === tier ? 'seg active' : 'seg'} onClick={() => patch({ tier })}>
+                {tier}
+              </button>
+            ))}
+          </div>
+          <label className="field-label" htmlFor="game-quantity">How many to give away</label>
+          <input id="game-quantity" type="number" inputMode="numeric" min="1" value={draft.quantity} onChange={(event) => patch({ quantity: event.target.value })} />
+          {field('image', 'Photo (optional)', 'https://… or images/prizes/griller.png')}
+          <p className="muted small">A link to a photo, or a path to one in the wedding site's repo. It shows on the raffle wheel and the winner screen.</p>
         </>
       ) : null}
 
