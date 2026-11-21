@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { KINDS, TIERS } from '../lib/gamesCloud';
 import Sheet from './Sheet';
 
+const youtubeId = (url) => (String(url).match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/|live\/)([\w-]{11})/) || String(url).trim().match(/^([\w-]{11})$/) || [])[1];
+
 const EMPTY = {
   question: { round: '', q: '', a: '', b: '', answer: '' },
   tiebreaker: { q: '', answer: '' },
-  song: { title: '', artist: '', note: '' },
+  song: { title: '', artist: '', youtube: '', start: '0:00', length: 10, note: '' },
   prize: { name: '', tier: 'minor', quantity: 1, image: '' },
 };
 
@@ -25,11 +27,13 @@ export default function GameItemSheet({ open, kind, item, rounds, onClose, onSav
   );
 
   const quantity = parseInt(draft.quantity, 10);
-  const canSubmit = kind === 'prize' ? Boolean(draft.name?.trim()) && quantity >= 1 : kind === 'song' ? Boolean(draft.title?.trim()) : Boolean(draft.q?.trim()) && (kind !== 'question' || (draft.a?.trim() && draft.b?.trim()));
+  const length = parseInt(draft.length, 10);
+  const badLink = kind === 'song' && draft.youtube?.trim() && !youtubeId(draft.youtube);
+  const canSubmit = kind === 'prize' ? Boolean(draft.name?.trim()) && quantity >= 1 : kind === 'song' ? Boolean(draft.title?.trim()) && !badLink && (!draft.youtube?.trim() || length >= 1) : Boolean(draft.q?.trim()) && (kind !== 'question' || (draft.a?.trim() && draft.b?.trim()));
   const submit = () => {
     if (!canSubmit) return;
     const clean = Object.fromEntries(Object.entries(draft).map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value]));
-    onSave(kind === 'prize' ? { ...clean, quantity } : clean);
+    onSave(kind === 'prize' ? { ...clean, quantity } : kind === 'song' ? { ...clean, length: length || 10 } : clean);
     onClose();
   };
 
@@ -81,6 +85,19 @@ export default function GameItemSheet({ open, kind, item, rounds, onClose, onSav
         <>
           {field('title', 'Title', 'Song title')}
           {field('artist', 'Artist', 'Artist')}
+          {field('youtube', 'YouTube link', 'https://youtu.be/…')}
+          {badLink ? <p className="muted small dn">That doesn't look like a YouTube video link.</p> : null}
+          <div className="row-form">
+            <div>
+              <label className="field-label" htmlFor="game-start">Start at (m:ss)</label>
+              <input id="game-start" inputMode="numeric" value={draft.start ?? ''} placeholder="0:45" onChange={(event) => patch({ start: event.target.value })} />
+            </div>
+            <div>
+              <label className="field-label" htmlFor="game-length">Clip length (seconds)</label>
+              <input id="game-length" type="number" inputMode="numeric" min="1" value={draft.length ?? ''} onChange={(event) => patch({ length: event.target.value })} />
+            </div>
+          </div>
+          <p className="muted small">The games page plays just this part straight from YouTube. Use "Play the clip" on its Guess the Tune tab to check it.</p>
           {field('note', 'Note for the band or tech', 'e.g. play the first 10 seconds')}
         </>
       ) : null}
