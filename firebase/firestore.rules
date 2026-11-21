@@ -27,6 +27,14 @@ service cloud.firestore {
       allow read, write: if member();
     }
 
+    // The wedding games page reads this without signing in (the host's phone,
+    // the LED tech's laptop), so anyone may read it; only the household writes.
+    // It holds game questions and answers, nothing private.
+    match /weddingGames/{item} {
+      allow read: if true;
+      allow write: if member();
+    }
+
     // Anything outside that subtree is denied, including by a signed-in member.
     match /{document=**} {
       allow read, write: if false;

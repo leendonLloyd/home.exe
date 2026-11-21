@@ -10,6 +10,7 @@ import Todo from './pages/Todo';
 // keeps the hub and the other apps as light as they were before.
 const Bills = lazy(() => import('./pages/Bills'));
 const CloudGate = lazy(() => import('./components/CloudGate'));
+const Games = lazy(() => import('./pages/Games'));
 const Grocery = lazy(() => import('./pages/Grocery'));
 const Workout = lazy(() => import('./pages/Workout'));
 const WorkoutLog = lazy(() => import('./pages/WorkoutLog'));
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/laundry/check/:sessionId" element={cloud('Laundry', <LaundryCheck />)} />
           <Route path="/bills" element={cloud('Bills', <Bills />)} />
           <Route path="/grocery" element={cloud('Groceries', <Grocery />)} />
+          <Route path="/games" element={cloud('Wedding games', <Games />)} />
           <Route path="/todo" element={<Todo />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/workout" element={cloud('Workout', <Workout />)} />

@@ -72,6 +72,21 @@ households/home/workout/current     chosen plan and today's part-done sets
 households/home/workout/entry-<id>  one per exercise of a finished session
 ```
 
+The wedding games sit outside the household subtree, in a top-level
+`weddingGames` collection, because the games page on the wedding site is read by
+browsers that never sign in (the host's phone, the LED tech's laptop). The rules
+let anyone read it and only the household write it; it holds game questions and
+answers, nothing private.
+
+```
+weddingGames/q-<id>      one per Last Man Standing question (round, q, a, b, answer, order)
+weddingGames/tb-<id>     one per tiebreaker (q, answer, order)
+weddingGames/song-<id>   one per Guess the Tune song (title, artist, note, order)
+```
+
+The games page reads it over Firestore's REST API and falls back to the site's
+`games.json` for any list that is empty here or when Firestore can't be reached.
+
 `counts` and `cart` are single documents with a field per item so a tap sends
 `increment(1)` rather than rewriting a document the other phone is also
 editing. That is the case localStorage could never get right: two people adding

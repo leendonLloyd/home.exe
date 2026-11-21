@@ -8,6 +8,7 @@ const APPS = [
   { to: '/bills', name: 'Bills', description: 'Track recurring bills and see what is due', icon: 'receipt' },
   { to: '/todo', name: 'To Do', description: 'Read and edit the wedding planner to-do sheet', icon: 'checklist' },
   { to: '/payments', name: 'Payments', description: 'Vendor balances from the wedding payment sheet', icon: 'card' },
+  { to: '/games', name: 'Wedding games', description: 'Questions, answers and songs for the games page', icon: 'dice' },
 ];
 
 export default function Hub() {
